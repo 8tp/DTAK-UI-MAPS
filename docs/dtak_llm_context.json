@@ -1,0 +1,309 @@
+{
+  "board": {
+    "name": "dTAK",
+    "url": "https://trello.com/b/8P1C3tks",
+    "lists": [
+      {
+        "name": "Backlog",
+        "cards": [
+          {
+            "title": "OM-1: As a user, I can download a map region for use without the internet",
+            "assignees": [
+              "Alec Paxton",
+              "Anthony Hoang",
+              "John Schell"
+            ]
+          },
+          {
+            "title": "OM-1: As a user, I can download a map region for use without the internet",
+            "assignees": [
+              "Alec Paxton",
+              "Anthony Hoang",
+              "John Schell"
+            ]
+          },
+          {
+            "title": "OM-2: As a user, I can see an indicator that my current map is offline or online"
+          },
+          {
+            "title": "OM-2: As a user, I can see an indicator that my current map is offline or online"
+          },
+          {
+            "title": "OM-3: As a user, I can search for streets or landmarks within downloaded regions"
+          },
+          {
+            "title": "OM-3: As a user, I can search for streets or landmarks within downloaded regions"
+          },
+          {
+            "title": "OM-4: As a user, I can view and drop markers (CoT points) on the offline map"
+          },
+          {
+            "title": "OM-4: As a user, I can view and drop markers (CoT points) on the offline map"
+          },
+          {
+            "title": "OM-5: As a user, I can share one or more points and shapes on a map"
+          },
+          {
+            "title": "OM-5: As a user, I can share one or more points and shapes on a map"
+          },
+          {
+            "title": "OM-6: Preload zoom levels 0-10"
+          },
+          {
+            "title": "OM-6: Preload zoom levels 0-10"
+          },
+          {
+            "title": "OM-7: Draw circle",
+            "comments": [
+              {
+                "author": "John Schell",
+                "text": "Is the goal for the user to be able to drag and draw a circle any size? I’ll assume it would be the same for other shapes as well."
+              }
+            ]
+          },
+          {
+            "title": "OM-7: Draw circle",
+            "comments": [
+              {
+                "author": "Daniel Chantland",
+                "text": "Is the goal for the user to be able to drag and draw a circle any size? I’ll assume it would be the same for other shapes as well."
+              }
+            ]
+          },
+          {
+            "title": "OM-8: Draw square"
+          },
+          {
+            "title": "OM-8: Draw square"
+          },
+          {
+            "title": "OM-9: Draw grid",
+            "comments": [
+              {
+                "author": "Alec Paxton",
+                "text": "Does this mean to overlay a grid? Or allow the user to draw freely on the map?\nDoes the grid need to be customizable based on an actual unit of measure or customized to command and control systems for an AO?"
+              }
+            ]
+          },
+          {
+            "title": "OM-9: Draw grid",
+            "comments": [
+              {
+                "author": "Daniel Chantland",
+                "text": "Does this mean to overlay a grid? Or allow the user to draw freely on the map?\nDoes the grid need to be customizable based on an actual unit of measure or customized to command and control systems for an AO?"
+              }
+            ]
+          },
+          {
+            "title": "OM-10: Generate map tiles"
+          },
+          {
+            "title": "OM-10: Generate map tiles"
+          },
+          {
+            "title": "OM-11: Load tiles to S3"
+          },
+          {
+            "title": "OM-11: Load tiles to S3"
+          },
+          {
+            "title": "P2-1: As a user, I can automatically discover nearby devices and join a mesh network",
+            "assignees": [
+              "Bryce Jones",
+              "Kiona Coats"
+            ],
+            "comments": [
+              {
+                "author": "Kiona Coats",
+                "text": "Concern:\n\nHow easily does Ditto SDK and p2p features integrate with other components built by others in the team?\n\nNeed to make sure data structures etc. are consistent across the project"
+              }
+            ]
+          },
+          {
+            "title": "P2-1: As a user, I can automatically discover nearby devices and join a mesh network",
+            "assignees": [
+              "Bryce Jones",
+              "Kiona Coats"
+            ],
+            "comments": [
+              {
+                "author": "Daniel Chantland",
+                "text": "Concern:\n\nHow easily does Ditto SDK and p2p features integrate with other components built by others in the team?\n\nNeed to make sure data structures etc. are consistent across the project"
+              }
+            ]
+          },
+          {
+            "title": "P2-2: As a user, I can share location, markers and chat messages with peers when there is no internet",
+            "comments": [
+              {
+                "author": "Kiona Coats",
+                "text": "Concern:\nHow will we ensure that there are not duplicate messages sent via Ditto AND Tak Server when the user goes from offline to online?\n\n(Ex: Offline message is broadcast via mesh network, then sent again via Tak Server when user connects to internet)\n\nPossible Solutions:\ndedupe function\nunique ID per message"
+              }
+            ]
+          },
+          {
+            "title": "P2-2: As a user, I can share location, markers and chat messages with peers when there is no internet",
+            "comments": [
+              {
+                "author": "Daniel Chantland",
+                "text": "Concern:\nHow will we ensure that there are not duplicate messages sent via Ditto AND Tak Server when the user goes from offline to online?\n\n(Ex: Offline message is broadcast via mesh network, then sent again via Tak Server when user connects to internet)\n\nPossible Solutions:\ndedupe function\nunique ID per message"
+              }
+            ]
+          },
+          {
+            "title": "P2-3: As a user, I can see which peers have successfully received my updates",
+            "comments": [
+              {
+                "author": "Kiona Coats",
+                "text": "As someone who doesn’t have experience with TAK, would TAK messages be broadcast to everyone automatically or must a user go to the “chat” plugin to receive/view a message?"
+              }
+            ]
+          },
+          {
+            "title": "P2-3: As a user, I can see which peers have successfully received my updates",
+            "comments": [
+              {
+                "author": "Daniel Chantland",
+                "text": "As someone who doesn’t have experience with TAK, would TAK messages be broadcast to everyone automatically or must a user go to the “chat” plugin to receive/view a message?"
+              }
+            ]
+          },
+          {
+            "title": "P2-4: As a developer, I can plug the Ditto SDK into React Native with minimal bridging code",
+            "comments": [
+              {
+                "author": "Kiona Coats",
+                "text": "Concern:\n\nHow easily does Ditto SDK and p2p features integrate into React Native + other components built by others in the team?\n\n‌\n\nShouldn’t be bad, hopefully?? – vibe coded some offline storage/p2p files/features already that seem to integrate nicely with react native"
+              }
+            ]
+          },
+          {
+            "title": "P2-4: As a developer, I can plug the Ditto SDK into React Native with minimal bridging code",
+            "comments": [
+              {
+                "author": "Daniel Chantland",
+                "text": "Concern:\n\nHow easily does Ditto SDK and p2p features integrate into React Native + other components built by others in the team?\n\n‌\n\nShouldn’t be bad, hopefully?? – vibe coded some offline storage/p2p files/features already that seem to integrate nicely with react native"
+              }
+            ]
+          },
+          {
+            "title": "TS-1: As an authenticated user, I can log in to a TAK Server using my credentials and server URL",
+            "assignees": [
+              "Daniel Chantland",
+              "Hunter Meherin"
+            ]
+          },
+          {
+            "title": "TS-1: As an authenticated user, I can log in to a TAK Server using my credentials and server URL",
+            "assignees": [
+              "Daniel Chantland",
+              "Hunter Meherin"
+            ]
+          },
+          {
+            "title": "TS-2: As a user, my location and markers sync with the TAK Server when connectivity exists"
+          },
+          {
+            "title": "TS-2: As a user, my location and markers sync with the TAK Server when connectivity exists"
+          },
+          {
+            "title": "TS-3: As a user, I can view other team members on the map and open their shared attachments"
+          },
+          {
+            "title": "TS-3: As a user, I can view other team members on the map and open their shared attachments"
+          },
+          {
+            "title": "CH-1: As a user, I can send text messages to a chat room",
+            "assignees": [
+              "Zendrick Bibler"
+            ]
+          },
+          {
+            "title": "CH-1: As a user, I can send text messages to a chat room",
+            "assignees": [
+              "Zendrick Bibler"
+            ]
+          },
+          {
+            "title": "CH-2: As a user, I can send direct messages to a selected peer"
+          },
+          {
+            "title": "CH-2: As a user, I can send direct messages to a selected peer"
+          },
+          {
+            "title": "CH-3: As a user, I can attach images or files to chat messages"
+          },
+          {
+            "title": "CH-3: As a user, I can attach images or files to chat messages"
+          },
+          {
+            "title": "CH-4: As a user, I can view delivery status and resend failed messages"
+          },
+          {
+            "title": "CH-4: As a user, I can view delivery status and resend failed messages"
+          },
+          {
+            "title": "CH-5: As a user, I can receive push notifications when a new message arrives"
+          },
+          {
+            "title": "CH-5: As a user, I can receive push notifications when a new message arrives"
+          },
+          {
+            "title": "TP-1: As a user, I can synchronize mission data (markers, files, logs and chat) across multiple devices, even when I reconnect after being offline",
+            "assignees": [
+              "Ro Maharaj"
+            ]
+          },
+          {
+            "title": "TP-1: As a user, I can synchronize mission data (markers, files, logs and chat) across multiple devices, even when I reconnect after being offline",
+            "assignees": [
+              "Ro Maharaj"
+            ]
+          },
+          {
+            "title": "TP-2: As a user, I can capture geo‑tagged photos and markup them (draw circles, arrows or text) before sharing with my team"
+          },
+          {
+            "title": "TP-2: As a user, I can capture geo‑tagged photos and markup them (draw circles, arrows or text) before sharing with my team"
+          },
+          {
+            "title": "OB-1: Allow users to select a region for maps"
+          },
+          {
+            "title": "OB-1: Allow users to select a region for maps"
+          },
+          {
+            "title": "OB-2: Prompt the user for necessary permissions - precise location, push notifications, any others?"
+          },
+          {
+            "title": "OB-2: Prompt the user for necessary permissions - precise location, push notifications, any others?"
+          },
+          {
+            "title": "OB-3: Prompt the user for their information - picture, name, callsign, optional home location?"
+          },
+          {
+            "title": "OB-3: Prompt the user for their information - picture, name, callsign, optional home location?"
+          },
+          {
+            "title": "TP-3: Settings screen with \"dark mode\" switch"
+          },
+          {
+            "title": "TP-3: Settings screen with \"dark mode\" switch"
+          },
+          {
+            "title": "OM-11: Measure distances"
+          },
+          {
+            "title": "OM-11: Measure distances"
+          },
+          {
+            "title": "TP-4: Network connectivity"
+          },
+          {
+            "title": "TP-4: Network connectivity"
+          }
+        ]
+      }
+    ]
+  }
+}
