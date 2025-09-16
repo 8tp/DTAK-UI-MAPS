@@ -1,50 +1,41 @@
-# Welcome to your Expo app 👋
+# dTAK Engineering Handbook
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Purpose
+The dTAK program delivers an offline-first tactical awareness kit built with React Native and supporting services. The product must provide resilient mapping, mesh-based collaboration, TAK Server interoperability, robust chat, and intuitive onboarding for teams operating with intermittent connectivity.
 
-## Get started
+## Product Pillars
+- **Offline Maps (OM-1 – OM-11):** Region download, tile generation + S3 delivery, markers, measurement, and drawing tools that work without network access.
+- **Mesh Networking (P2-1 – P2-4):** Ditto SDK-backed peer discovery and synchronization to keep locations, markers, and chat flowing when disconnected.
+- **TAK Server Sync (TS-1 – TS-3):** Secure authentication and two-way sync of user data, attachments, and situational awareness when connectivity exists.
+- **Collaboration Suite (CH-1 – CH-5, TP-1 – TP-4):** Chat rooms, direct messages, attachments, mission data sync, geo-tagged photos, and settings management.
+- **Onboarding Experience (OB-1 – OB-3):** Region selection, permissions prompts, and profile setup to prepare devices for operational use.
 
-1. Install dependencies
+## System Snapshot
+Refer to `docs/architecture.md` for the full view. At a glance:
+- **Client:** React Native application with offline storage, Ditto mesh integration, and TAK Server client.
+- **Services:** Tile generation pipeline, S3 asset hosting, TAK Server endpoints, push notification and messaging services.
+- **Data Stores:** Local mobile caches (tiles, mission data), cloud object storage for tiles/attachments, enumerated sync queues.
+- **Telemetry & Ops:** Observability for downloads, sync reconciliation, mesh health, and push delivery.
 
-   ```bash
-   npm install
-   ```
+## Working Model
+- **Plan → Develop → Test → Fix:** Shared workflow described in `docs/engineering_process.md` to protect delivery quality.
+- **Documentation:** Additional deep dives live under `docs/` and role-specific prompt guidance under `role_prompts/`.
+- **Backlog Integration:** Ticket references follow the Trello export (`OM-*`, `P2-*`, `TS-*`, `CH-*`, `TP-*`, `OB-*`).
 
-2. Start the app
+## Directory Guide
+- `docs/architecture.md` – Platform architecture, component responsibilities, data flows.
+- `docs/workstreams.md` – Feature breakdown, dependencies, and open questions per ticket cluster.
+- `docs/engineering_process.md` – Development lifecycle, roles, communication expectations.
+- `docs/testing_strategy.md` – QA scope, automation, and validation requirements.
+- `role_prompts/` – System prompts tailored for each cross-functional role plus a shared context prompt.
 
-   ```bash
-   npx expo start
-   ```
+## Getting Started Checklist
+1. Read the architecture and workstreams docs to understand technical scope and priorities.
+2. Align with the engineering process to follow consistent Plan → Develop → Test → Fix practices.
+3. Load the appropriate role prompt (or the generic system prompt) into your LLM tooling for contextual assistance.
+4. Capture new decisions in Architecture Decision Records (ADRs) and update docs as tickets progress.
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Contributing
+- Keep documentation current when backlog items move or implementation decisions change.
+- Reference ticket IDs in commits, designs, and test plans for traceability.
+- Coordinate with Security, DevOps, QA, and UX counterparts when changes span their domains.
