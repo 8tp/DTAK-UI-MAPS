@@ -1,33 +1,32 @@
-import { MapView } from "@maplibre/maplibre-react-native";
-import { useNavigation } from "expo-router";
+// App.tsx
+import { Camera, MapView, RasterLayer, RasterSource } from "@maplibre/maplibre-react-native";
+import React from "react";
 import { StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const Home = () => {
-	const insets = useSafeAreaInsets();
+export default function App() {
+	return (
+		<MapView style={styles.map}>
+			<Camera zoomLevel={5} centerCoordinate={[-95.7129, 37.0902]} />
+			{/* RasterSource uses `tileUrlTemplates` (array of URL templates) */}
+			{/* TODO: implement variable amount of raster sources */}
+			<RasterSource
+				id="satelliteSource"
+				tileUrlTemplates={[
+					"https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg?api_key=c177fb0b-10fa-4ba1-87ba-3a8446a7887d",
+				]}
+				tileSize={256}>
+				{/* use sourceID to reference the source */}
+				<RasterLayer
+					id="satelliteLayer"
+					sourceID="satelliteSource"
+					style={{ rasterOpacity: 1 }}
+				/>
+			</RasterSource>
+		</MapView>
+	);
+}
 
-	const styles = StyleSheet.create({
-		body: {
-			paddingTop: insets.top,
-			gap: 40,
-			height: "100%",
-			width: "100%",
-			alignItems: "center",
-		},
-		tileContainer: {
-			gap: 24,
-			alignItems: "center",
-		},
-		tileParent: {
-			height: 540,
-			width: "100%",
-		},
-	});
-
-	//Navigation customization block
-	const navigation = useNavigation();
-
-	return <MapView style={{ flex: 1 }} />;
-};
-
-export default Home;
+const styles = StyleSheet.create({
+	page: { flex: 1 },
+	map: { flex: 1 },
+});
