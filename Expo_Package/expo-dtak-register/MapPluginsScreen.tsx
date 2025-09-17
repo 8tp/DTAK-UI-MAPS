@@ -4,11 +4,46 @@
 import React from "react";
 import {
   ScrollView,
+  StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from "react-native";
+
+type MapPluginsScreenProps = {
+  onBack?: () => void;
+};
+
+type MapCollection = {
+  id: string;
+  name: string;
+  selected: boolean;
+  hint: string;
+};
+
+type QuickAction = {
+  id: string;
+  label: string;
+  active: boolean;
+  icon: string;
+};
+
+type Tone = "neutral" | "alert" | "inactive";
+
+type StatusTile = {
+  id: string;
+  title: string;
+  state: string;
+  tone: Tone;
+  icon: string;
+};
+
+type ToneStyles = {
+  card: StyleProp<ViewStyle>;
+  badge: StyleProp<ViewStyle>;
+};
 
 const palette = {
   bg: "#04070f",
@@ -22,168 +57,160 @@ const palette = {
   subtext: "#92a4c0",
   badge: "#29344a",
   alert: "#ff647c",
-};
+} as const;
 
-const mapCollections = [
+const mapCollections: MapCollection[] = [
   { id: "nyc", name: "New York", selected: true, hint: "Live" },
   { id: "chi", name: "Chicago", selected: false, hint: "Reserved" },
   { id: "mgm", name: "Montgomery", selected: false, hint: "Standby" },
 ];
 
-const pluginQuickActions = [
+const pluginQuickActions: QuickAction[] = [
   { id: "chat", label: "Chat", active: true, icon: "💬" },
   { id: "persco", label: "Persco", active: false, icon: "🧭" },
   { id: "killbox", label: "Killbox", active: false, icon: "🎯" },
 ];
 
-const pluginStatusTiles = [
+const pluginStatusTiles: StatusTile[] = [
   { id: "visibility", title: "Visibility overlay", state: "Partial", tone: "neutral", icon: "👁" },
   { id: "threat", title: "Threat watch", state: "Live", tone: "alert", icon: "⚠️" },
   { id: "lowlight", title: "Low light", state: "Dim", tone: "inactive", icon: "🌙" },
 ];
 
-export default function MapPluginsScreen({ onBack }) {
-  return (
-    <ScrollView style={styles.wrapper} contentContainerStyle={styles.wrapperContent}>
-      <View style={styles.headerRow}>
-        {onBack ? (
-          <TouchableOpacity onPress={onBack} style={styles.backButton} accessibilityRole="button">
-            <Text style={styles.backGlyph}>{"‹"}</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.backPlaceholder} />
-        )}
-        <View>
-          <View style={styles.brandBadge}>
-            <Text style={styles.brandBadgeGlyph}>Δ</Text>
-          </View>
-          <Text style={styles.brandLabel}>DTAK</Text>
-          <Text style={styles.headerTitle}>Map plugins</Text>
+const MapPluginsScreen: React.FC<MapPluginsScreenProps> = ({ onBack }) => (
+  <ScrollView style={styles.wrapper} contentContainerStyle={styles.wrapperContent}>
+    <View style={styles.headerRow}>
+      {onBack ? (
+        <TouchableOpacity onPress={onBack} style={styles.backButton} accessibilityRole="button">
+          <Text style={styles.backGlyph}>{"‹"}</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.backPlaceholder} />
+      )}
+      <View>
+        <View style={styles.brandBadge}>
+          <Text style={styles.brandBadgeGlyph}>Δ</Text>
         </View>
+        <Text style={styles.brandLabel}>DTAK</Text>
+        <Text style={styles.headerTitle}>Map plugins</Text>
       </View>
-
-      <View style={styles.deviceShell}>
-        <View style={styles.mapPreview}>
-          <View style={styles.previewBackdrop}>
-            <View style={styles.gridLineHorizontal} />
-            <View style={styles.gridLineVertical} />
-          </View>
-          <View style={styles.previewLabels}>
-            <Text style={styles.previewTitle}>MISSION SECTOR</Text>
-            <Text style={styles.previewSubtitle}>Urban mesh — Sector 7</Text>
-          </View>
-          <View style={styles.previewTopRow}>
-            <TouchableOpacity style={styles.previewChip} accessibilityRole="button">
-              <Text style={styles.previewChipGlyph}>👥</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.previewChip} accessibilityRole="button">
-              <Text style={styles.previewChipGlyph}>🔔</Text>
-              <View style={styles.alertDot} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.sheet}>
-          <SectionHeader title="My maps" />
-          <MapCollectionGrid />
-
-          <SectionHeader title="Plugins" style={{ marginTop: 24 }} />
-          <PluginQuickActions />
-          <PluginStatusTiles />
-        </View>
-      </View>
-    </ScrollView>
-  );
-}
-
-function SectionHeader({ title, style }) {
-  return (
-    <View style={[styles.sectionHeader, style]}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <ViewMorePill />
     </View>
-  );
-}
 
-function ViewMorePill() {
-  return (
-    <TouchableOpacity style={styles.viewMore} accessibilityRole="button">
-      <Text style={styles.viewMoreText}>View more</Text>
-    </TouchableOpacity>
-  );
-}
+    <View style={styles.deviceShell}>
+      <View style={styles.mapPreview}>
+        <View style={styles.previewBackdrop}>
+          <View style={styles.gridLineHorizontal} />
+          <View style={styles.gridLineVertical} />
+        </View>
+        <View style={styles.previewLabels}>
+          <Text style={styles.previewTitle}>MISSION SECTOR</Text>
+          <Text style={styles.previewSubtitle}>Urban mesh — Sector 7</Text>
+        </View>
+        <View style={styles.previewTopRow}>
+          <TouchableOpacity style={styles.previewChip} accessibilityRole="button">
+            <Text style={styles.previewChipGlyph}>👥</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.previewChip} accessibilityRole="button">
+            <Text style={styles.previewChipGlyph}>🔔</Text>
+            <View style={styles.alertDot} />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-function MapCollectionGrid() {
-  return (
-    <View style={styles.mapGrid}>
-      {mapCollections.map((collection, index) => {
-        const marginRight = (index + 1) % 3 === 0 ? 0 : 12;
-        return (
-          <View
-            key={collection.id}
-            style={[styles.mapCard, { marginRight }]}
-            accessible
-            accessibilityLabel={`${collection.name} map`}
-          >
-            <View style={styles.mapThumbnail}>
-              <View style={styles.thumbnailOverlay}>
-                <Text style={styles.thumbnailGlyph}>▣</Text>
+      <View style={styles.sheet}>
+        <SectionHeader title="My maps" />
+        <MapCollectionGrid />
+
+        <SectionHeader title="Plugins" style={{ marginTop: 24 }} />
+        <PluginQuickActions />
+        <PluginStatusTiles />
+      </View>
+    </View>
+  </ScrollView>
+);
+
+const SectionHeader: React.FC<{ title: string; style?: StyleProp<ViewStyle> }> = ({ title, style }) => (
+  <View style={[styles.sectionHeader, style]}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+    <ViewMorePill />
+  </View>
+);
+
+const ViewMorePill: React.FC = () => (
+  <TouchableOpacity style={styles.viewMore} accessibilityRole="button">
+    <Text style={styles.viewMoreText}>View more</Text>
+  </TouchableOpacity>
+);
+
+const MapCollectionGrid: React.FC = () => (
+  <View style={styles.mapGrid}>
+    {mapCollections.map((collection, index) => {
+      const marginRight = (index + 1) % 3 === 0 ? 0 : 12;
+      return (
+        <View
+          key={collection.id}
+          style={[styles.mapCard, { marginRight }]}
+          accessible
+          accessibilityLabel={`${collection.name} map`}
+        >
+          <View style={styles.mapThumbnail}>
+            <View style={styles.thumbnailOverlay}>
+              <Text style={styles.thumbnailGlyph}>▣</Text>
+            </View>
+            {collection.selected ? (
+              <View style={styles.livePill}>
+                <Text style={styles.livePillText}>● {collection.hint}</Text>
               </View>
-              {collection.selected ? (
-                <View style={styles.livePill}>
-                  <Text style={styles.livePillText}>● {collection.hint}</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text style={styles.mapName}>{collection.name}</Text>
+            ) : null}
           </View>
-        );
-      })}
-    </View>
-  );
-}
+          <Text style={styles.mapName}>{collection.name}</Text>
+        </View>
+      );
+    })}
+  </View>
+);
 
-function PluginQuickActions() {
-  return (
-    <View style={styles.quickActionRow}>
-      {pluginQuickActions.map((action, index) => {
-        const marginRight = index === pluginQuickActions.length - 1 ? 0 : 12;
-        return (
-          <TouchableOpacity
-            key={action.id}
-            style={[styles.quickAction, action.active ? styles.quickActionActive : styles.quickActionIdle, { marginRight }]}
-            accessibilityRole="button"
-          >
-            <Text style={styles.quickActionGlyph}>{action.icon}</Text>
-            <Text style={styles.quickActionLabel}>{action.label}</Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-}
+const PluginQuickActions: React.FC = () => (
+  <View style={styles.quickActionRow}>
+    {pluginQuickActions.map((action, index) => {
+      const marginRight = index === pluginQuickActions.length - 1 ? 0 : 12;
+      const stateStyle = action.active ? styles.quickActionActive : styles.quickActionIdle;
 
-function PluginStatusTiles() {
-  return (
-    <View style={styles.statusRow}>
-      {pluginStatusTiles.map((tile, index) => {
-        const marginRight = index === pluginStatusTiles.length - 1 ? 0 : 12;
-        return (
-          <View key={tile.id} style={[styles.statusCard, { marginRight }, toneStyle(tile.tone).card]}> 
-            <View style={[styles.statusBadge, toneStyle(tile.tone).badge]}>
-              <Text style={styles.statusBadgeGlyph}>{tile.icon}</Text>
-              <Text style={styles.statusBadgeText}>{tile.state}</Text>
-            </View>
-            <Text style={styles.statusTitle}>{tile.title}</Text>
-            <Text style={styles.statusSubtitle}>Synced via TAK mesh</Text>
+      return (
+        <TouchableOpacity
+          key={action.id}
+          style={[styles.quickAction, stateStyle, { marginRight }]}
+          accessibilityRole="button"
+        >
+          <Text style={styles.quickActionGlyph}>{action.icon}</Text>
+          <Text style={styles.quickActionLabel}>{action.label}</Text>
+        </TouchableOpacity>
+      );
+    })}
+  </View>
+);
+
+const PluginStatusTiles: React.FC = () => (
+  <View style={styles.statusRow}>
+    {pluginStatusTiles.map((tile, index) => {
+      const marginRight = index === pluginStatusTiles.length - 1 ? 0 : 12;
+      const stylesForTone = toneStyle(tile.tone);
+
+      return (
+        <View key={tile.id} style={[styles.statusCard, { marginRight }, stylesForTone.card]}> 
+          <View style={[styles.statusBadge, stylesForTone.badge]}>
+            <Text style={styles.statusBadgeGlyph}>{tile.icon}</Text>
+            <Text style={styles.statusBadgeText}>{tile.state}</Text>
           </View>
-        );
-      })}
-    </View>
-  );
-}
+          <Text style={styles.statusTitle}>{tile.title}</Text>
+          <Text style={styles.statusSubtitle}>Synced via TAK mesh</Text>
+        </View>
+      );
+    })}
+  </View>
+);
 
-function toneStyle(tone) {
+function toneStyle(tone: Tone): ToneStyles {
   switch (tone) {
     case "alert":
       return {
@@ -497,3 +524,5 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
+
+export default MapPluginsScreen;
