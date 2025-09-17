@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import AccountMenu from "@components/AccountMenu";
 import MapsSection from "@components/MapsSection";
 import PluginsSection from "@components/PluginsSection";
@@ -111,6 +112,42 @@ export default function App() {
 	const [cameraZoom, setCameraZoom] = useState(mapConfigFor("new-york").zoomLevel);
 
 	const sheetRef = useRef<BottomSheet>(null);
+		const [showDebug, setShowDebug] = useState(false);
+
+		// Ensure Ditto initializes early in the app lifecycle when config is present.
+		useEffect(() => {
+			// Prefer Expo public env vars, then fallback to process.env
+			const expoEnv = (Constants && Constants.manifest && (Constants.manifest as any).extra) || {};
+			const appId = process.env.EXPO_PUBLIC_DITTO_APP_ID || process.env.EXPO_PUBLIC_DITTO_PROD_APP_ID || (expoEnv.EXPO_PUBLIC_DITTO_APP_ID as string) || (expoEnv.EXPO_PUBLIC_DITTO_PROD_APP_ID as string) || (Constants.manifest?.extra?.EXPO_PUBLIC_DITTO_APP_ID as any) || (Constants.expoConfig && (Constants.expoConfig as any).extra && (Constants.expoConfig as any).extra.EXPO_PUBLIC_DITTO_APP_ID);
+			if (!appId) {
+				console.warn('[App] No Ditto App ID found in environment; skipping Ditto initialization');
+				return;
+			}
+
+			const svc = DittoService.getInstance();
+			// Build a conservative config object; enable transports by default
+			// Create a per-run workingDir to avoid file lock collisions when
+			// launching multiple simulators from the same source tree.
+			const runSuffix = String(Math.random()).slice(2, 8);
+			const cfg = {
+				appId: String(appId),
+				playgroundToken: process.env.EXPO_PUBLIC_DITTO_PLAYGROUND_TOKEN || (expoEnv.EXPO_PUBLIC_DITTO_PLAYGROUND_TOKEN as string),
+				websocketURL: process.env.EXPO_PUBLIC_DITTO_WEBSOCKET_URL || (expoEnv.EXPO_PUBLIC_DITTO_WEBSOCKET_URL as string),
+				enableBluetooth: true,
+				enableWiFi: true,
+				enableAWDL: true,
+				workingDir: `ditto-run-${runSuffix}`,
+			} as const;
+
+			(async () => {
+				try {
+					await svc.initialize(cfg as any);
+					console.log('[App] Ditto initialization triggered');
+				} catch (err) {
+					console.error('[App] Ditto initialization failed at startup', err);
+				}
+			})();
+		}, []);
 
 	useEffect(() => {
 		(async () => {
@@ -611,6 +648,15 @@ export default function App() {
 				{/* User location marker */}
 				<UserLocation />
 			</MapView>
+
+			{/* Floating debug toggle (development only) */}
+			<TouchableOpacity
+				style={debugStyles.fab}
+				onPress={() => setShowDebug((s) => !s)}
+			>
+				<Text style={{ color: '#fff', fontWeight: '700' }}>DITTO</Text>
+			</TouchableOpacity>
+
 			{/* Marker Details Modal - Create */}
 			<MarkerDetailsModal
 				visible={createModalVisible}
@@ -1024,5 +1070,164 @@ const styles = StyleSheet.create({
 		height: 4,
 		borderRadius: 2,
 		backgroundColor: "#626A6F",
+=======
+// App.tsx - Enhanced with Ditto Mesh Networking
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View, Text } from "react-native";
+import { MapWithMessaging } from "../ditto/components/MapWithMessaging";
+import { useDitto } from "../ditto/hooks/useDitto";
+import { getDittoConfig } from "../ditto/config/DittoConfig";
+
+function AppInternal() {
+	const { isInitialized, isInitializing, error, initialize } = useDitto();
+	const [initError, setInitError] = useState<string | null>(null);
+
+	useEffect(() => {
+		const initializeDitto = async () => {
+			try {
+				const config = getDittoConfig();
+				console.log('App: calling initialize(config) for Ditto');
+				await initialize(config);
+			} catch (err) {
+				const errorMessage = err instanceof Error ? err.message : 'Failed to initialize Ditto';
+				setInitError(errorMessage);
+				console.error('Ditto initialization failed:', err);
+			}
+		};
+
+		initializeDitto();
+	}, [initialize]);
+
+	if (isInitializing) {
+		return (
+			<View style={styles.loadingContainer}>
+				<Text style={styles.loadingText}>🔄 Initializing Mesh Network...</Text>
+			</View>
+		);
+	}
+
+	if (error || initError) {
+		return (
+			<View style={styles.errorContainer}>
+				<Text style={styles.errorText}>❌ Mesh Network Error</Text>
+				<Text style={styles.errorDetails}>{error || initError}</Text>
+				<Text style={styles.errorNote}>
+					The app will continue to work but mesh networking features will be unavailable.
+				</Text>
+			</View>
+		);
+	}
+
+	if (!isInitialized) {
+		return (
+			<View style={styles.loadingContainer}>
+				<Text style={styles.loadingText}>📡 Connecting to Mesh Network...</Text>
+			</View>
+		);
+	}
+
+	return (
+		<MapWithMessaging 
+			style={styles.map}
+			initialCenter={[-95.7129, 37.0902]}
+			initialZoom={5}
+			showPeerPanel={true}
+		/>
+	);
+}
+export default function App() {
+	return (
+		<ErrorBoundary>
+			<AppInternal />
+		</ErrorBoundary>
+	);
+}
+// Simple ErrorBoundary to show full stack traces during development
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
+	constructor(props: any) {
+		super(props);
+		this.state = { error: null };
+	}
+
+	static getDerivedStateFromError(error: Error) {
+		return { error };
+	}
+
+	componentDidCatch(error: Error, info: any) {
+		console.error('Uncaught error in component tree:', error, info);
+	}
+
+	render() {
+		if (this.state.error) {
+			return (
+				<View style={{flex:1,justifyContent:'center',alignItems:'center',padding:20}}>
+					<Text style={{fontSize:18,color:'#b00020'}}>Unhandled Error</Text>
+					<Text style={{marginTop:10,color:'#333'}}>{this.state.error.message}</Text>
+					<Text style={{marginTop:10,color:'#666',fontSize:12}}>{this.state.error.stack}</Text>
+				</View>
+			);
+		}
+		return this.props.children as any;
+	}
+}
+
+// Install a global handler so unhandled promise rejections and errors are logged with stack
+if (typeof global !== 'undefined') {
+	(global as any).registerGlobalErrorHandlers = (() => {
+		const origConsoleError = console.error;
+		console.error = (...args: any[]) => {
+			origConsoleError(...args);
+		};
+
+		process.on && process.on('unhandledRejection', (reason: any) => {
+			console.error('Unhandled Rejection at:', reason && reason.stack ? reason.stack : reason);
+		});
+
+		process.on && process.on('uncaughtException', (err: any) => {
+			console.error('Uncaught Exception:', err && err.stack ? err.stack : err);
+		});
+	})();
+}
+
+const styles = StyleSheet.create({
+	map: { 
+		flex: 1 
+	},
+	loadingContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: '#f5f5f5',
+	},
+	loadingText: {
+		fontSize: 18,
+		color: '#333',
+		textAlign: 'center',
+	},
+	errorContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: '#f5f5f5',
+		padding: 20,
+	},
+	errorText: {
+		fontSize: 20,
+		color: '#FF3B30',
+		textAlign: 'center',
+		marginBottom: 10,
+	},
+	errorDetails: {
+		fontSize: 16,
+		color: '#666',
+		textAlign: 'center',
+		marginBottom: 20,
+	},
+	errorNote: {
+		fontSize: 14,
+		color: '#999',
+		textAlign: 'center',
+		fontStyle: 'italic',
+>>>>>>> Committing functional Ditto x React Native w map code
 	},
 });
