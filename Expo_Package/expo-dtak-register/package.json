@@ -15,7 +15,8 @@
     "expo": "~51.0.0",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
-    "react-native": "0.74.0"
+    "react-native": "0.74.0",
+    "react-native-svg": "15.2.0"
   },
   "devDependencies": {
     "@testing-library/react-native": "^12.4.3",
