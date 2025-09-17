@@ -1,289 +1,274 @@
-Awesome—here’s a clear, copy-pasteable runbook to stand up Option A: static, dirt-cheap vector tiles using PMTiles on S3 + CloudFront. I’ll also note the tiny delta you’ll need if your client is React Native (MapLibre Native), since PMTiles’ browser protocol is not built into RN yet.
+Absolutely. Below is a React Native + MapLibre Native–only runbook that creates vector tiles (z/x/y), stores them in S3, and serves them without CloudFront. This avoids PMTiles (which MapLibre Native doesn’t read directly) and sticks to what RN supports today.
 
 ⸻
 
-0) What you’ll end up with
-	•	An S3 bucket holding one or more *.pmtiles files.
-	•	A CloudFront distribution in front for HTTPS + caching.
-	•	Clients fetch tiles via HTTP range requests directly from the .pmtiles file (zero server code).  ￼
+Overview
+
+You will:
+	1.	Generate vector MBTiles → export to z/x/y .pbf tiles
+	2.	Upload tiles + style + glyphs + sprites to S3
+	3.	Configure CORS and (dev) public read
+	4.	Point MapLibre RN at your S3 URLs
 
 ⸻
 
-1) Make (or get) your tiles
+Prereqs (local)
+	•	Java 17+ (for Planetiler)
+	•	Node 18+ (for sprite/glyph tooling)
+	•	Tools:
+	•	Planetiler (fast OSM → MBTiles)
+	•	Tippecanoe (provides tile-join to export z/x/y)
+	•	node-fontnik (generate glyphs PBF)
+	•	@mapbox/spritezero-cli (generate sprites)
+	•	AWS CLI v2
 
-Pick one:
-
-A) Use ready-made PMTiles
-Download a Protomaps basemap build (planet or region-sized).  ￼
-
-# Inspect a hosted build (example)
-pmtiles show https://build.protomaps.com/2025-08-24.pmtiles
-
-B) Build your own from OSM
-	•	Fastest path: Planetiler → MBTiles… then convert to PMTiles.  ￼
-
-# Example: cut a regional extract at z0–14
-planetiler --osm=your.osm.pbf --mbtiles=out.mbtiles \
-  --bounds=-123,36.8,-121,38.5 --min-zoom=0 --max-zoom=14
-# Convert MBTiles → PMTiles
-pmtiles convert out.mbtiles out.pmtiles
-
-	•	Or generate PMTiles directly with Tippecanoe ≥2.17 for custom layers.  ￼
-
-PMTiles is designed for S3 + CDN, zero maintenance, very low request count compared to z/x/y directories.  ￼
+If you prefer, you can swap Planetiler for the OpenMapTiles Docker toolchain; the export step is the same (MBTiles → z/x/y).
 
 ⸻
 
-2) Create the S3 bucket
-	1.	In S3, Create bucket (e.g., dtak-tiles-prod).
-	2.	Block Public Access: ON (keep bucket private).
-	3.	Upload your .pmtiles file (e.g., maps/region.pmtiles).
-	•	Content-Type can be application/octet-stream. S3 supports Range requests automatically.  ￼
+1) Generate vector tiles (MBTiles)
 
-CORS (allow range requests via browsers/apps): in Permissions → CORS:
+Use a regional OSM extract (e.g., from Geofabrik) and Planetiler:
 
-[
-  {
-    "AllowedHeaders": ["*","Range"],
-    "AllowedMethods": ["GET","HEAD"],
-    "AllowedOrigins": ["*"],
-    "ExposeHeaders": ["Accept-Ranges","Content-Length","Content-Range"]
-  }
-]
+# 1) Get your region extract (example bbox/zoom; adjust)
+curl -L -o region.osm.pbf https://download.geofabrik.de/north-america/us/california-latest.osm.pbf
 
-(Restrict AllowedOrigins to your domains later.)
+# 2) Run Planetiler (OpenMapTiles profile recommended)
+# If you don’t have planetiler, grab the jar from releases first.
+java -Xmx8g -jar planetiler.jar \
+  --osm=region.osm.pbf \
+  --mbtiles=out.mbtiles \
+  --area=auto \
+  --min-zoom=0 --max-zoom=14 \
+  --download --force
+
+You now have out.mbtiles (vector tiles, gzip-compressed internally).
 
 ⸻
 
-3) Put CloudFront in front (HTTPS + caching + OAC)
-	1.	Create Distribution → Origin = your S3 bucket (not the website endpoint).
-	2.	Origin access: Create an Origin Access Control (OAC) and attach it.
-	3.	In S3 Bucket policy, allow only the CloudFront OAC principal (the console will suggest the JSON).
-	4.	Default cache behavior:
-	•	Allowed methods: GET, HEAD
-	•	Viewer protocol: Redirect HTTP → HTTPS
-	•	Caching: Long TTLs are fine (tiles are immutable).
-	5.	(Optional) Set a custom domain in CloudFront + ACM cert + Route53 alias.
-AWS’s “S3 + CloudFront static hosting” guide walks these knobs.  ￼
+2) Export MBTiles → z/x/y directory
 
-Resulting public URL example:
+MapLibre Native reads z/x/y. Export with tile-join:
 
-https://d111111abcdef8.cloudfront.net/maps/region.pmtiles
+# Exports a directory of gzipped .pbf tiles at tiles/{z}/{x}/{y}.pbf
+tile-join -e tiles -f out.mbtiles
+
+You’ll get:
+
+tiles/
+  0/0/0.pbf
+  1/0/0.pbf
+  ...
 
 
 ⸻
 
-4) Wire up the client
+3) Generate sprites (images + JSON)
 
-4A) Web (MapLibre GL JS) — native PMTiles support
+Create a simple sprite set for your style (add your PNG icons to icons/ at 1x and 2x sizes).
 
-MapLibre GL JS supports PMTiles through a tiny protocol shim (no server).  ￼
+# Install spritezero cli once:
+npm i -g @mapbox/spritezero-cli
 
-<script type="module">
-  import maplibregl from 'https://cdn.skypack.dev/maplibre-gl';
-  import { Protocol } from 'https://unpkg.com/pmtiles@latest/dist/index.js';
+# Generate sprite sheet and metadata
+spritezero sprites/sprite icons/     # produces sprite.png + sprite.json
+spritezero --retina sprites/sprite@2x icons/
 
-  const protocol = new Protocol();
-  maplibregl.addProtocol('pmtiles', protocol.tile);
-
-  const map = new maplibregl.Map({
-    container: 'map',
-    style: {
-      "version": 8,
-      "sources": {
-        "basemap": {
-          "type": "vector",
-          "url": "pmtiles://https://YOUR_CLOUDFRONT/maps/region.pmtiles"
-        }
-      },
-      "layers": [
-        /* your style layers here */
-      ]
-    }
-  });
-</script>
-
-4B) React Native (MapLibre Native) — read this carefully
-	•	MapLibre React Native does not (yet) ship a built-in pmtiles:// protocol like the browser does. Use one of these patterns:  ￼
-	1.	Host standard z/x/y tiles on S3/CloudFront instead of a single PMTiles file (slightly more requests, but simplest).
-	•	Generate z/x/y from your source (e.g., Planetiler export, tippecanoe toolchain) and upload the folder tree; then reference "tiles": ["https://YOUR_CLOUDFRONT/tiles/{z}/{x}/{y}.mvt"] in your style.
-	2.	Keep PMTiles on S3 and add a tiny proxy that translates /{z}/{x}/{y}.mvt → range reads inside the PMTiles (e.g., Lambda@Edge or a minimal API). That’s “serverless”, but no always-on server.
-	•	If you’re open to a web-based map view, MapLibre GL JS inside a WebView can use the PMTiles protocol (trade-offs apply).
-
-TL;DR for RN today: either publish z/x/y tiles statically or add a minimal edge proxy for .pmtiles. (Web clients can use pmtiles:// directly.)  ￼
+Uploads to S3 later will live under sprites/.
 
 ⸻
 
-5) (Optional) Publish z/x/y tiles instead of PMTiles
+4) Generate glyphs (font PBFs)
 
-If you pick the RN-native path with z/x/y:
-	•	Use your tiler to output a directory tree, then aws s3 sync to the bucket:
+Pick the fonts you’ll reference in your style (e.g., “Noto Sans Regular/Italic/Bold”).
 
-aws s3 sync ./tiles/ s3://dtak-tiles-prod/tiles/ --size-only
+npm i -g node-fontnik
 
-	•	Reference in your style:
+# Suppose you have TTFs in ./fonts/NotoSans-*.ttf
+# Generate Mapbox-style PBF ranges for each face (256 glyph ranges per face)
+mkdir -p glyphs/Noto%20Sans%20Regular
+glyphs --font ./fonts/NotoSans-Regular.ttf --output glyphs/Noto%20Sans%20Regular
+
+mkdir -p glyphs/Noto%20Sans%20Bold
+glyphs --font ./fonts/NotoSans-Bold.ttf --output glyphs/Noto%20Sans%20Bold
+
+# Repeat for any font faces used in your style
+
+This creates:
+
+glyphs/
+  Noto%20Sans%20Regular/0-255.pbf
+  Noto%20Sans%20Regular/256-511.pbf
+  ...
+
+
+⸻
+
+5) Create a minimal Style JSON
+
+Make a style.json that references your S3 endpoints. Keep it small for dev:
 
 {
-  "type": "vector",
-  "tiles": ["https://YOUR_CLOUDFRONT/tiles/{z}/{x}/{y}.mvt"],
-  "minzoom": 0, "maxzoom": 14
+  "version": 8,
+  "name": "dtak-dev-style",
+  "glyphs": "https://YOUR_BUCKET.s3.YOUR_REGION.amazonaws.com/glyphs/{fontstack}/{range}.pbf",
+  "sprite": "https://YOUR_BUCKET.s3.YOUR_REGION.amazonaws.com/sprites/sprite",
+  "sources": {
+    "basemap": {
+      "type": "vector",
+      "tiles": ["https://YOUR_BUCKET.s3.YOUR_REGION.amazonaws.com/tiles/{z}/{x}/{y}.pbf"],
+      "minzoom": 0,
+      "maxzoom": 14
+    }
+  },
+  "layers": [
+    { "id": "land", "type": "fill", "source": "basemap", "source-layer": "land", "paint": {"fill-color": "#e8f1f2"} },
+    { "id": "water", "type": "fill", "source": "basemap", "source-layer": "water", "paint": {"fill-color": "#c6e2ff"} },
+    { "id": "roads", "type": "line", "source": "basemap", "source-layer": "transportation", "paint": {"line-width": 0.5, "line-color": "#999"} },
+    { "id": "place-labels", "type": "symbol", "source": "basemap", "source-layer": "place",
+      "layout": {"text-field": ["get", "name"], "text-font": ["Noto Sans Regular"], "text-size": 12},
+      "paint": {"text-color": "#334"} }
+  ]
 }
 
-Trade-off: more S3 requests vs. the single-file PMTiles approach.  ￼
+Ensure the source-layer names match your tiles’ schema (OpenMapTiles names shown above).
 
 ⸻
 
-6) Cost/leak protection tips
-	•	Immutable filenames (include a version/epoch in region.v1.pmtiles) so CloudFront can cache “forever” safely.
-	•	If hosting planet-scale .pmtiles, consider preventing direct public downloads (range-only access) to avoid one-shot 70+ GB egress surprises. (General PMTiles hosting caution.)  ￼
-	•	Start with regional extracts (state/country) to keep files 1–10 GB.
-	•	Set CloudFront Cache-Control: long max-age, and ensure the S3 object has ETag (default) for efficient validation.
+6) Create S3 bucket and upload
+
+Create a dev bucket (e.g., dtak-tiles-dev) and upload everything:
+
+aws s3api create-bucket --bucket dtak-tiles-dev --region YOUR_REGION --create-bucket-configuration LocationConstraint=YOUR_REGION
+
+# Upload tiles with correct metadata (compressed protobuf)
+aws s3 sync ./tiles s3://dtak-tiles-dev/tiles/ \
+  --content-type application/x-protobuf \
+  --content-encoding gzip
+
+# Upload style
+aws s3 cp style.json s3://dtak-tiles-dev/style.json \
+  --content-type application/json
+
+# Upload sprites
+aws s3 cp sprites/sprite.png s3://dtak-tiles-dev/sprites/sprite.png --content-type image/png
+aws s3 cp sprites/sprite.json s3://dtak-tiles-dev/sprites/sprite.json --content-type application/json
+aws s3 cp sprites/sprite@2x.png s3://dtak-tiles-dev/sprites/sprite@2x.png --content-type image/png
+aws s3 cp sprites/sprite@2x.json s3://dtak-tiles-dev/sprites/sprite@2x.json --content-type application/json
+
+# Upload glyphs (PBFs)
+aws s3 sync ./glyphs s3://dtak-tiles-dev/glyphs/ \
+  --content-type application/x-protobuf
+
+Why the metadata?
+	•	Tiles are gzipped PBF: set Content-Type: application/x-protobuf (or application/vnd.mapbox-vector-tile) and Content-Encoding: gzip.
+	•	Glyph PBFs aren’t gzipped by default (skip Content-Encoding unless you gzip them).
 
 ⸻
 
-7) Quick validation checklist
-	•	S3 object responds to GET with Accept-Ranges: bytes.
-	•	CloudFront distribution is Deployed and returns 206 Partial Content for range requests.
-	•	Web demo using MapLibre GL JS + pmtiles:// renders correctly.  ￼
-	•	RN path: either tiles render from your tiles/{z}/{x}/{y}.mvt URLs, or your edge proxy serves them.
+7) Enable CORS (dev)
 
-⸻
-
-References
-	•	PMTiles concepts & docs (single-file tiles; HTTP Range; S3/CDN friendly).  ￼
-	•	PMTiles + MapLibre GL JS example (protocol).  ￼
-	•	PMTiles “Getting started” & CLI.  ￼
-	•	Planetiler (generate tiles fast); OpenMapTiles profile.  ￼
-	•	MapLibre React Native docs.  ￼
-	•	AWS S3 + CloudFront static hosting guidance.  ￼
-
-⸻
-
-If you want, I can also drop in a Terraform (S3 + OAC CloudFront + sensible CORS/TTL) and a minimal TileJSON style you can reuse for RN (z/x/y) and web (pmtiles).
-
-
-
-
-Can we do this without cloudfront directly from an S3 bucket for dev purposes?
-
-
-
-
-Yep—totally doable for dev. You can serve tiles directly from S3 (no CloudFront) as long as you (a) use the S3 REST endpoint for HTTPS and (b) enable CORS + Range support. Here’s a tight step-by-step for both PMTiles and z/x/y tiles.
-
-⸻
-
-Option A — PMTiles from S3 (web clients)
-
-1) Create a private S3 bucket & upload your tiles
-	•	Bucket: e.g., dtak-tiles-dev
-	•	Upload maps/region.pmtiles
-	•	S3 supports HTTP Range GETs, which PMTiles needs.  ￼
-
-2) Enable CORS (so browsers can make range requests)
-
-Bucket → Permissions → CORS:
+In S3 → Bucket → Permissions → CORS, paste:
 
 [
   {
     "AllowedOrigins": ["*"],
-    "AllowedMethods": ["GET","HEAD"],
-    "AllowedHeaders": ["*","Range"],
-    "ExposeHeaders": ["Accept-Ranges","Content-Length","Content-Range"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["Accept-Ranges", "Content-Length", "Content-Range", "ETag"],
     "MaxAgeSeconds": 3000
   }
 ]
 
-(Tighten AllowedOrigins later to your dev app URL(s).)  ￼
+(For tighter dev, replace * with your app’s origin; RN uses native HTTP, so * is fine here.)
 
-3) Make the file publicly readable (dev-only)
+⸻
 
-Bucket → Permissions → Bucket policy (replace bucket name/region/prefix):
+8) Make objects readable (dev)
+
+For quick dev, add a bucket policy granting public read to the prefixes you just uploaded (or use pre-signed URLs if you prefer private dev):
 
 {
   "Version": "2012-10-17",
   "Statement": [{
-    "Sid": "DevPublicReadTiles",
+    "Sid": "DevPublicRead",
     "Effect": "Allow",
     "Principal": "*",
     "Action": ["s3:GetObject"],
-    "Resource": "arn:aws:s3:::dtak-tiles-dev/maps/*"
+    "Resource": [
+      "arn:aws:s3:::dtak-tiles-dev/style.json",
+      "arn:aws:s3:::dtak-tiles-dev/tiles/*",
+      "arn:aws:s3:::dtak-tiles-dev/glyphs/*",
+      "arn:aws:s3:::dtak-tiles-dev/sprites/*"
+    ]
   }]
 }
 
-Or keep it private and use pre-signed URLs during development.
-
-4) Use the REST endpoint (HTTPS), not the website endpoint
-	•	Use: https://dtak-tiles-dev.s3.<region>.amazonaws.com/maps/region.pmtiles
-	•	Avoid the website endpoint for this—S3 website hosting is HTTP-only; the REST endpoint is HTTPS.  ￼
-
-5) Wire up MapLibre GL JS with the PMTiles protocol
-
-<script type="module">
-  import maplibregl from 'https://cdn.skypack.dev/maplibre-gl';
-  import { Protocol, PMTiles } from 'https://unpkg.com/pmtiles@latest/dist/index.js';
-
-  const protocol = new Protocol();
-  maplibregl.addProtocol('pmtiles', protocol.tile);
-
-  const url = 'https://dtak-tiles-dev.s3.<region>.amazonaws.com/maps/region.pmtiles';
-  const p = new PMTiles(url);
-  protocol.add(p); // share instance
-
-  new maplibregl.Map({
-    container: 'map',
-    style: {
-      "version": 8,
-      "sources": {
-        "basemap": { "type": "vector", "url": `pmtiles://${url}` }
-      },
-      "layers": [ /* your layers here */ ]
-    }
-  });
-</script>
-
-(MapLibre + PMTiles protocol example is standard.)  ￼
-
-6) Quick sanity checks
-	•	curl -I -H "Range: bytes=0-1023" https://.../region.pmtiles returns 206 Partial Content and Accept-Ranges: bytes. (S3 supports range GETs.)  ￼
-	•	The map loads in your dev app’s browser.
-
-PMTiles is explicitly designed to sit on S3/compatible storage with Range + CORS.  ￼
+In prod, drop public read and front with CloudFront or use signed URLs.
 
 ⸻
 
-Option B — z/x/y vector tiles (works in React Native today)
+9) Wire up React Native (MapLibre Native)
 
-React Native MapLibre doesn’t yet ship the PMTiles protocol natively. For RN development without CloudFront, publish z/x/y tiles to S3 and point your style at them.
+Install and initialize MapLibre for RN:
 
-1) Upload tiles
+# Example package (adjust if you use a different RN binding)
+npm i @maplibre/maplibre-react-native
+cd ios && pod install && cd ..
 
-aws s3 sync ./tiles/ s3://dtak-tiles-dev/tiles/ --size-only
+In your RN component:
 
-2) CORS (same as above)
+import MapLibreGL from '@maplibre/maplibre-react-native';
+import { View } from 'react-native';
 
-Use the same CORS JSON (Range not strictly needed for z/x/y, but harmless).
+MapLibreGL.setAccessToken(null); // not needed for self-hosted
+MapLibreGL.setConnected(true);   // allow network
 
-3) Public read (dev-only) or pre-signed URLs
+const STYLE_URL = 'https://dtak-tiles-dev.s3.YOUR_REGION.amazonaws.com/style.json';
 
-Use the same bucket policy pattern as above, but for tiles/*.
-
-4) Style source in RN (and web too)
-
-{
-  "type": "vector",
-  "tiles": ["https://dtak-tiles-dev.s3.<region>.amazonaws.com/tiles/{z}/{x}/{y}.mvt"],
-  "minzoom": 0,
-  "maxzoom": 14
+export default function MapScreen() {
+  return (
+    <View style={{ flex: 1 }}>
+      <MapLibreGL.MapView style={{ flex: 1 }} styleURL={STYLE_URL}>
+        <MapLibreGL.Camera
+          zoomLevel={10}
+          centerCoordinate={[-122.4194, 37.7749]}
+        />
+      </MapLibreGL.MapView>
+    </View>
+  );
 }
 
+Gotchas:
+	•	If labels don’t show, your glyphs or font names in the style likely don’t match. Ensure text-font names correspond to your glyphs/{fontstack}/… directories (URL-encoded spaces).
+	•	If icons don’t show, validate the sprite URL base and that both sprite.png and sprite.json (and @2x variants) are present.
 
 ⸻
 
-Notes & gotchas (dev)
-	•	HTTPS: use the S3 REST URL shown above; the S3 website URL is HTTP only.  ￼
-	•	Public access: safe for throwaway dev buckets, but prefer pre-signed URLs when possible.
-	•	Costs: direct S3 is fine for dev; for prod you’ll likely want CloudFront for TLS with custom domains + caching + lower request latency.
-	•	PMTiles + RN: for a pure RN client, either (a) use z/x/y during dev, (b) render MapLibre GL JS inside a WebView, or (c) add a tiny edge proxy later. (Web already works with PMTiles.)  ￼
+10) Sanity checks
+	•	Curl a tile:
+curl -I https://dtak-tiles-dev.s3.YOUR_REGION.amazonaws.com/tiles/5/5/12.pbf
+Should return 200 with Content-Type: application/x-protobuf and (for tiles) Content-Encoding: gzip.
+	•	Open the style URL in a browser:
+https://dtak-tiles-dev.s3.YOUR_REGION.amazonaws.com/style.json
+Ensure the referenced paths resolve.
+	•	Run the app; you should see a basemap.
 
-If you want, I can paste a ready-made bucket policy, CORS, and a tiny TileJSON style you can drop in for either PMTiles (web) or z/x/y (RN).
+⸻
+
+11) Optional improvements (still S3-only)
+	•	Versioned paths: e.g., tiles/v1/... to let clients cache safely.
+	•	Pre-signed URLs: keep bucket private during dev.
+	•	Multiple regions: publish tiles/ca/…, tiles/ga/… and switch sources by AOI.
+
+⸻
+
+Quick “cut & paste” checklist
+	•	Generate out.mbtiles (Planetiler)
+	•	tile-join -e tiles -f out.mbtiles
+	•	Generate sprites/* and glyphs/*
+	•	Upload: tiles/, sprites/, glyphs/, style.json with correct metadata
+	•	S3 CORS + (dev) public-read policy
+	•	RN MapLibre points to S3 style.json
+
+If you want, I can also give you a ready-made style.json aligned to the OpenMapTiles schema you just produced (so you can drop it in and see map features immediately).
