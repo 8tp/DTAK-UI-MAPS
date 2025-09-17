@@ -20,6 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { RadialMenu } from "../features/map/components/RadialMenu";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
+import { useDrawSquare } from "../features/map/hooks/useDrawSquare";
 import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 
@@ -38,18 +39,21 @@ export default function App() {
 	const [anchor, setAnchor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [coordinate, setCoordinate] = useState<[number, number] | undefined>(undefined);
 	const mapRef = useRef<MapViewRef | null>(null);
-	const draw = useDrawCircle();
+    const draw = useDrawCircle();
+    const drawSquare = useDrawSquare();
 	const { select } = useFeatureDeletion();
 
 	const sheetRef = useRef<BottomSheet>(null);
 
 	const handleSelect = (action: any) => {
 		setVisible(false);
-		if (action === "circle" && mapRef.current) {
-			draw.start(mapRef.current);
-			return;
-		}
-		performAction(action, { screen: anchor, coordinate });
+        const ctx = {
+            screen: anchor,
+            coordinate,
+            startCircle: () => { if (mapRef.current) draw.start(mapRef.current); },
+            startSquare: () => { if (mapRef.current) drawSquare.start(mapRef.current); },
+        } as const;
+		performAction(action, ctx);
 	};
 
 	const onMapLongPress = (e: any) => {
@@ -65,8 +69,18 @@ export default function App() {
 			setAnchor({ x: pointArray[0], y: pointArray[1] });
 		}
 
-		if (Array.isArray(coord) && coord.length >= 2) {
-			const circle = draw.findCircleAtCoordinate([coord[0], coord[1]]);
+        if (Array.isArray(coord) && coord.length >= 2) {
+            const square = drawSquare.findSquareAtCoordinate([coord[0], coord[1]]);
+            if (square) {
+                select({
+                    id: (square.properties as any).id,
+                    type: "square",
+                    delete: () => drawSquare.removeSquareById((square.properties as any).id),
+                });
+                setVisible(false);
+                return;
+            }
+            const circle = draw.findCircleAtCoordinate([coord[0], coord[1]]);
 			if (circle) {
 				select({
 					id: circle.properties.id,
@@ -113,6 +127,20 @@ export default function App() {
 						<LineLayer id="circlesLine" style={{ lineColor: "#2563eb", lineWidth: 2 }} />
 					</ShapeSource>
 				)}
+                {/* Square preview source */}
+                {drawSquare.sources.preview && (
+                    <ShapeSource id="squarePreviewSource" shape={drawSquare.sources.preview}>
+                        <FillLayer id="squarePreviewFill" style={{ fillOpacity: 0.25, fillColor: "#22c55e" }} />
+                        <LineLayer id="squarePreviewLine" style={{ lineColor: "#22c55e", lineWidth: 2 }} />
+                    </ShapeSource>
+                )}
+                {/* Persisted squares */}
+                {drawSquare.sources.squares.features.length > 0 && (
+                    <ShapeSource id="squaresSource" shape={drawSquare.sources.squares}>
+                        <FillLayer id="squaresFill" style={{ fillOpacity: 0.2, fillColor: "#16a34a" }} />
+                        <LineLayer id="squaresLine" style={{ lineColor: "#16a34a", lineWidth: 2 }} />
+                    </ShapeSource>
+                )}
 			</MapView>
 
 			{/* Toolbar fixed at the top */}
@@ -147,7 +175,7 @@ export default function App() {
 			/>
 
 			{/* Gesture overlay for draw circle mode */}
-			{draw.mode === "DRAW_CIRCLE" && (
+            {draw.mode === "DRAW_CIRCLE" && (
 				<View
 					style={StyleSheet.absoluteFill}
 					pointerEvents="box-only"
@@ -167,6 +195,26 @@ export default function App() {
 					}}
 				/>
 			)}
+            {drawSquare.mode === "DRAW_SQUARE" && (
+                <View
+                    style={StyleSheet.absoluteFill}
+                    pointerEvents="box-only"
+                    onStartShouldSetResponder={() => true}
+                    onMoveShouldSetResponder={() => true}
+                    onResponderGrant={(e: GestureResponderEvent) => {
+                        const { locationX, locationY } = e.nativeEvent;
+                        drawSquare.onTap([locationX, locationY]);
+                    }}
+                    onResponderMove={(e: GestureResponderEvent) => {
+                        const { locationX, locationY } = e.nativeEvent;
+                        drawSquare.onDrag([locationX, locationY]);
+                    }}
+                    onResponderRelease={(e: GestureResponderEvent) => {
+                        const { locationX, locationY } = e.nativeEvent;
+                        drawSquare.onRelease([locationX, locationY]);
+                    }}
+                />
+            )}
 		</View>
 	);
 }

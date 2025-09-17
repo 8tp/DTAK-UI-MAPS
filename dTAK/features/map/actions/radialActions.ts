@@ -6,7 +6,10 @@ export function performAction(action: RadialAction, ctx: RadialSelectContext) {
 			// TODO: Integrate with markers feature: dispatch addMarker at ctx.coordinate
 			break;
         case "circle":
-            // TODO: signal draw circle mode
+            ctx.startCircle && ctx.startCircle();
+            break;
+        case "square":
+            ctx.startSquare && ctx.startSquare();
             break;
 		case "map-style":
 			// TODO: Toggle style or open style selector
@@ -25,9 +28,6 @@ export function performAction(action: RadialAction, ctx: RadialSelectContext) {
 			break;
 		case "compass":
 			// TODO: Toggle compass mode
-			break;
-		case "info":
-			// TODO: Show info panel
 			break;
 		default:
 			break;

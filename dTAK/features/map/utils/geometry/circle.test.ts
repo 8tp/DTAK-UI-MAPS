@@ -1,4 +1,5 @@
-import { approximateCircle, metersBetween } from "./circle";
+import { approximateCircle } from "./circle";
+import { metersBetween } from "./geodesy";
 
 describe("approximateCircle", () => {
     it("returns a closed polygon with expected vertex count", () => {
