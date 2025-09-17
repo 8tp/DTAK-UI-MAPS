@@ -1,11 +1,16 @@
 // App.tsx
+import Toolbar from "@components/Toolbar";
 import { Camera, MapView, RasterLayer, RasterSource } from "@maplibre/maplibre-react-native";
 import React from "react";
 import { StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function App() {
 	return (
 		<MapView style={styles.map}>
+			<SafeAreaView>
+				<Toolbar />
+			</SafeAreaView>
 			<Camera zoomLevel={5} centerCoordinate={[-95.7129, 37.0902]} />
 			{/* RasterSource uses `tileUrlTemplates` (array of URL templates) */}
 			{/* TODO: implement variable amount of raster sources */}
