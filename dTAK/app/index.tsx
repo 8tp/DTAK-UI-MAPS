@@ -1,23 +1,32 @@
-// App.tsx
 import Toolbar from "@components/Toolbar";
 import BottomSheet, {
 	BottomSheetBackgroundProps,
 	BottomSheetHandleProps,
 	BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { Camera, MapView, RasterLayer, RasterSource } from "@maplibre/maplibre-react-native";
+import {
+	Camera,
+	MapView,
+	RasterLayer,
+	RasterSource,
+	ShapeSource,
+	FillLayer,
+	LineLayer,
+	type MapViewRef,
+} from "@maplibre/maplibre-react-native";
 import React, { useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { GestureResponderEvent, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { RadialMenu } from "../features/map/components/RadialMenu";
+import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
+import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
+import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 
-// Custom background
 const CustomBackground = ({ style }: BottomSheetBackgroundProps) => (
 	<View style={[style, { backgroundColor: "#26292B", borderRadius: 16 }]} />
 );
 
-// Custom handle
 const CustomHandle = ({}: BottomSheetHandleProps) => (
 	<View style={[styles.handleContainer]}>
 		<View style={styles.handle} />
@@ -28,10 +37,23 @@ export default function App() {
 	const [visible, setVisible] = useState(false);
 	const [anchor, setAnchor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [coordinate, setCoordinate] = useState<[number, number] | undefined>(undefined);
+	const mapRef = useRef<MapViewRef | null>(null);
+	const draw = useDrawCircle();
+	const { select } = useFeatureDeletion();
 
 	const sheetRef = useRef<BottomSheet>(null);
 
-	const onLongPress = (e: any) => {
+	const handleSelect = (action: any) => {
+		setVisible(false);
+		if (action === "circle" && mapRef.current) {
+			draw.start(mapRef.current);
+			return;
+		}
+		performAction(action, { screen: anchor, coordinate });
+	};
+
+	const onMapLongPress = (e: any) => {
+		// Reveal the bottom sheet when long pressing
 		sheetRef.current?.snapToIndex(1);
 
 		const coord = e?.geometry?.coordinates ?? e?.coordinates;
@@ -42,7 +64,19 @@ export default function App() {
 		if (Array.isArray(pointArray) && pointArray.length >= 2) {
 			setAnchor({ x: pointArray[0], y: pointArray[1] });
 		}
+
 		if (Array.isArray(coord) && coord.length >= 2) {
+			const circle = draw.findCircleAtCoordinate([coord[0], coord[1]]);
+			if (circle) {
+				select({
+					id: circle.properties.id,
+					type: "circle",
+					delete: () => draw.removeCircleById(circle.properties.id),
+				});
+
+				setVisible(false);
+				return;
+			}
 			setCoordinate([coord[0], coord[1]]);
 		} else {
 			setCoordinate(undefined);
@@ -50,28 +84,35 @@ export default function App() {
 		setVisible(true);
 	};
 
-	const handleSelect = (action: any) => {
-		setVisible(false);
-		performAction(action, { screen: anchor, coordinate });
-	};
-
 	return (
 		<View style={styles.page}>
-			{/* Background map */}
-			<MapView style={styles.map} onLongPress={onLongPress}>
+			{/* @ts-expect-error styleURL exists on MapLibre MapView at runtime */}
+			<MapView ref={mapRef as any} style={styles.map} onLongPress={onMapLongPress} styleURL="https://demotiles.maplibre.org/style.json">
 				<Camera zoomLevel={5} centerCoordinate={[-95.7129, 37.0902]} />
 				<RasterSource
 					id="satelliteSource"
 					tileUrlTemplates={[
 						"https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg?api_key=c177fb0b-10fa-4ba1-87ba-3a8446a7887d",
 					]}
-					tileSize={256}>
-					<RasterLayer
-						id="satelliteLayer"
-						sourceID="satelliteSource"
-						style={{ rasterOpacity: 1 }}
-					/>
+					tileSize={256}
+				>
+					<RasterLayer id="satelliteLayer" sourceID="satelliteSource" style={{ rasterOpacity: 1 }} />
 				</RasterSource>
+
+				{/* Circle preview source */}
+				{draw.sources.preview && (
+					<ShapeSource id="circlePreviewSource" shape={draw.sources.preview}>
+						<FillLayer id="circlePreviewFill" style={{ fillOpacity: 0.25, fillColor: "#3b82f6" }} />
+						<LineLayer id="circlePreviewLine" style={{ lineColor: "#3b82f6", lineWidth: 2 }} />
+					</ShapeSource>
+				)}
+				{/* Persisted circles */}
+				{draw.sources.circles.features.length > 0 && (
+					<ShapeSource id="circlesSource" shape={draw.sources.circles}>
+						<FillLayer id="circlesFill" style={{ fillOpacity: 0.2, fillColor: "#2563eb" }} />
+						<LineLayer id="circlesLine" style={{ lineColor: "#2563eb", lineWidth: 2 }} />
+					</ShapeSource>
+				)}
 			</MapView>
 
 			{/* Toolbar fixed at the top */}
@@ -82,16 +123,20 @@ export default function App() {
 			{/* Bottom drawer always visible */}
 			<BottomSheet
 				ref={sheetRef}
-				index={2} // 👈 50% open by default
+				index={2}
 				snapPoints={["25%", "50%", "90%"]}
 				backgroundComponent={CustomBackground}
 				handleComponent={CustomHandle}
 				enablePanDownToClose
-				style={styles.bottomSheet}>
+				style={styles.bottomSheet}
+			>
 				<BottomSheetView style={styles.contentContainer}>
 					<Text>Awesome 🎉</Text>
 				</BottomSheetView>
 			</BottomSheet>
+
+			{/* Delete overlay */}
+			<DeleteOverlay />
 
 			{/* Radial menu */}
 			<RadialMenu
@@ -100,6 +145,28 @@ export default function App() {
 				onSelect={handleSelect}
 				onRequestClose={() => setVisible(false)}
 			/>
+
+			{/* Gesture overlay for draw circle mode */}
+			{draw.mode === "DRAW_CIRCLE" && (
+				<View
+					style={StyleSheet.absoluteFill}
+					pointerEvents="box-only"
+					onStartShouldSetResponder={() => true}
+					onMoveShouldSetResponder={() => true}
+					onResponderGrant={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						draw.onTap([locationX, locationY]);
+					}}
+					onResponderMove={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						draw.onDrag([locationX, locationY]);
+					}}
+					onResponderRelease={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						draw.onRelease([locationX, locationY]);
+					}}
+				/>
+			)}
 		</View>
 	);
 }
@@ -134,6 +201,8 @@ const styles = StyleSheet.create({
 		width: 40,
 		height: 4,
 		borderRadius: 2,
-		backgroundColor: "#626A6F", // 👈 handle color
+		backgroundColor: "#626A6F",
 	},
 });
+
+

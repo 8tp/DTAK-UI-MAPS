@@ -5,6 +5,9 @@ export function performAction(action: RadialAction, ctx: RadialSelectContext) {
 		case "drop-pin":
 			// TODO: Integrate with markers feature: dispatch addMarker at ctx.coordinate
 			break;
+        case "circle":
+            // TODO: signal draw circle mode
+            break;
 		case "map-style":
 			// TODO: Toggle style or open style selector
 			break;

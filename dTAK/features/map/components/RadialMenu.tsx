@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TouchableOpacity, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DEFAULT_RADIAL_ITEMS } from "../constants/radialItems";
 import type { RadialItem, RadialAction } from "../types/radial";
@@ -21,7 +21,9 @@ export const RadialMenu: React.FC<Props> = ({
 	items = DEFAULT_RADIAL_ITEMS,
 	radius = 100,
 }) => {
-	if (!visible) return null;
+    const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
+
+    if (!visible) return null;
 
 	const angleStep = (2 * Math.PI) / items.length;
     // Derive a ring that visually contains the current icon orbit.
@@ -62,6 +64,8 @@ export const RadialMenu: React.FC<Props> = ({
                     const angle = i * angleStep - Math.PI / 2;
                     const deg = (angle * 180) / Math.PI;
                     const dividerWidth = 2; // visual thickness of divider
+                    const isBoundary =
+                        hoveredIndex !== null && (i === hoveredIndex || i === (hoveredIndex + 1) % items.length);
                     return (
                         <View
                             key={`divider-${i}`}
@@ -80,6 +84,7 @@ export const RadialMenu: React.FC<Props> = ({
                                         { translateY: -(innerRadius + ringThickness / 2) },
                                     ],
                                 },
+                                isBoundary && { backgroundColor: "rgba(148, 150, 153, 0.35)" },
                             ]}
                         />
                     );
@@ -90,8 +95,8 @@ export const RadialMenu: React.FC<Props> = ({
                     const angle = (i + 0.5) * angleStep - Math.PI / 2;
                     const posX = Math.cos(angle) * radius;
                     const posY = Math.sin(angle) * radius;
-					return (
-						<TouchableOpacity
+                    return (
+                        <Pressable
 							key={item.key}
                             accessibilityRole="button"
                             style={[
@@ -100,16 +105,29 @@ export const RadialMenu: React.FC<Props> = ({
                                     width: buttonSize,
                                     height: buttonSize,
                                     borderRadius: buttonSize / 2,
+                                    backgroundColor: hoveredIndex === i ? "rgba(148, 150, 153, 0.18)" : "transparent",
                                     transform: [
                                         { translateX: posX - buttonSize / 2 },
                                         { translateY: posY - buttonSize / 2 },
+                                        ...(hoveredIndex === i ? [{ scale: 1.06 }] : []),
                                     ],
                                 },
                             ]}
 							onPress={() => onSelect(item.action)}
+                            onHoverIn={() => setHoveredIndex(i)}
+                            onHoverOut={() => setHoveredIndex((curr) => (curr === i ? null : curr))}
+                            onPressIn={() => setHoveredIndex(i)}
+                            onPressOut={() => setHoveredIndex((curr) => (curr === i ? null : curr))}
                             hitSlop={12}>
+						{item.icon.image ? (
+							<Image
+								source={item.icon.image}
+								style={{ width: 28, height: 28, resizeMode: "contain" }}
+							/>
+						) : (
 							<Ionicons name={item.icon.name as any} size={28} color="white" />
-						</TouchableOpacity>
+                        )}
+                        </Pressable>
 					);
 				})}
 			</View>
@@ -141,7 +159,7 @@ const styles = StyleSheet.create({
         position: "absolute",
         left: 0,
         top: 0,
-        backgroundColor: "rgba(156,163,175,0.9)", // gray-400-ish
+        backgroundColor: "rgba(148, 150, 153, 0.13)", // light gray, lower contrast
         borderRadius: 1,
     },
 });
