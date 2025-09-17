@@ -1,32 +1,105 @@
-// App.tsx
-import { Camera, MapView, RasterLayer, RasterSource } from "@maplibre/maplibre-react-native";
-import React from "react";
-import { StyleSheet } from "react-native";
+// App.tsx - Enhanced with Ditto Mesh Networking
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View, Text } from "react-native";
+import { MapWithMessaging } from "../ditto/components/MapWithMessaging";
+import { useDitto } from "../ditto/hooks/useDitto";
+import { getDittoConfig } from "../ditto/config/DittoConfig";
 
 export default function App() {
+	const { isInitialized, isInitializing, error, initialize } = useDitto();
+	const [initError, setInitError] = useState<string | null>(null);
+
+	useEffect(() => {
+		const initializeDitto = async () => {
+			try {
+				const config = getDittoConfig();
+				await initialize(config);
+			} catch (err) {
+				const errorMessage = err instanceof Error ? err.message : 'Failed to initialize Ditto';
+				setInitError(errorMessage);
+				console.error('Ditto initialization failed:', err);
+			}
+		};
+
+		initializeDitto();
+	}, [initialize]);
+
+	if (isInitializing) {
+		return (
+			<View style={styles.loadingContainer}>
+				<Text style={styles.loadingText}>🔄 Initializing Mesh Network...</Text>
+			</View>
+		);
+	}
+
+	if (error || initError) {
+		return (
+			<View style={styles.errorContainer}>
+				<Text style={styles.errorText}>❌ Mesh Network Error</Text>
+				<Text style={styles.errorDetails}>{error || initError}</Text>
+				<Text style={styles.errorNote}>
+					The app will continue to work but mesh networking features will be unavailable.
+				</Text>
+			</View>
+		);
+	}
+
+	if (!isInitialized) {
+		return (
+			<View style={styles.loadingContainer}>
+				<Text style={styles.loadingText}>📡 Connecting to Mesh Network...</Text>
+			</View>
+		);
+	}
+
 	return (
-		<MapView style={styles.map}>
-			<Camera zoomLevel={5} centerCoordinate={[-95.7129, 37.0902]} />
-			{/* RasterSource uses `tileUrlTemplates` (array of URL templates) */}
-			{/* TODO: implement variable amount of raster sources */}
-			<RasterSource
-				id="satelliteSource"
-				tileUrlTemplates={[
-					"https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg?api_key=c177fb0b-10fa-4ba1-87ba-3a8446a7887d",
-				]}
-				tileSize={256}>
-				{/* use sourceID to reference the source */}
-				<RasterLayer
-					id="satelliteLayer"
-					sourceID="satelliteSource"
-					style={{ rasterOpacity: 1 }}
-				/>
-			</RasterSource>
-		</MapView>
+		<MapWithMessaging 
+			style={styles.map}
+			initialCenter={[-95.7129, 37.0902]}
+			initialZoom={5}
+			showPeerPanel={true}
+		/>
 	);
 }
 
 const styles = StyleSheet.create({
-	page: { flex: 1 },
-	map: { flex: 1 },
+	map: { 
+		flex: 1 
+	},
+	loadingContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: '#f5f5f5',
+	},
+	loadingText: {
+		fontSize: 18,
+		color: '#333',
+		textAlign: 'center',
+	},
+	errorContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: '#f5f5f5',
+		padding: 20,
+	},
+	errorText: {
+		fontSize: 20,
+		color: '#FF3B30',
+		textAlign: 'center',
+		marginBottom: 10,
+	},
+	errorDetails: {
+		fontSize: 16,
+		color: '#666',
+		textAlign: 'center',
+		marginBottom: 20,
+	},
+	errorNote: {
+		fontSize: 14,
+		color: '#999',
+		textAlign: 'center',
+		fontStyle: 'italic',
+	},
 });
