@@ -1,3 +1,5 @@
+import type { ImageSourcePropType } from "react-native";
+
 export type RadialAction =
 	| "drop-pin"
 	| "map-style"
@@ -6,14 +8,14 @@ export type RadialAction =
 	| "download"
 	| "route"
 	| "compass"
-	| "info";
+	| "circle";
 
 export type ScreenPoint = { x: number; y: number };
 
 export type RadialItem = {
 	key: string;
 	action: RadialAction;
-	icon: { name: string };
+	icon: { name?: string; image?: ImageSourcePropType };
 	label?: string;
 };
 
