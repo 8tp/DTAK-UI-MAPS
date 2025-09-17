@@ -1,3 +1,5 @@
+import MapsSection from "@components/MapsSection";
+import PluginsSection from "@components/PluginsSection";
 import Toolbar from "@components/Toolbar";
 import BottomSheet, {
 	BottomSheetBackgroundProps,
@@ -6,37 +8,57 @@ import BottomSheet, {
 } from "@gorhom/bottom-sheet";
 import {
 	Camera,
+	FillLayer,
+	LineLayer,
 	MapView,
 	RasterLayer,
 	RasterSource,
 	ShapeSource,
-	FillLayer,
-	LineLayer,
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
 import React, { useRef, useState } from "react";
-import { GestureResponderEvent, StyleSheet, Text, View } from "react-native";
+import { GestureResponderEvent, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
+import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 import { RadialMenu } from "../features/map/components/RadialMenu";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
-import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 
 const CustomBackground = ({ style }: BottomSheetBackgroundProps) => (
 	<View style={[style, { backgroundColor: "#26292B", borderRadius: 16 }]} />
 );
 
-const CustomHandle = ({}: BottomSheetHandleProps) => (
+const CustomHandle = (_props: BottomSheetHandleProps) => (
 	<View style={[styles.handleContainer]}>
 		<View style={styles.handle} />
 	</View>
 );
 
+// Map configurations for different tile sets
+const mapConfigurations = {
+	"new-york": {
+		styleURL: "https://demotiles.maplibre.org/style.json",
+		centerCoordinate: [-74.006, 40.7128] as [number, number],
+		zoomLevel: 10,
+	},
+	chicago: {
+		styleURL: "https://demotiles.maplibre.org/style.json",
+		centerCoordinate: [-87.6298, 41.8781] as [number, number],
+		zoomLevel: 10,
+	},
+	montgomery: {
+		styleURL: "https://demotiles.maplibre.org/style.json",
+		centerCoordinate: [-86.2999, 32.3617] as [number, number],
+		zoomLevel: 10,
+	},
+};
+
 export default function App() {
 	const [visible, setVisible] = useState(false);
 	const [anchor, setAnchor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [coordinate, setCoordinate] = useState<[number, number] | undefined>(undefined);
+	const [selectedMap, setSelectedMap] = useState<string>("new-york");
 	const mapRef = useRef<MapViewRef | null>(null);
 	const draw = useDrawCircle();
 	const { select } = useFeatureDeletion();
@@ -50,6 +72,27 @@ export default function App() {
 			return;
 		}
 		performAction(action, { screen: anchor, coordinate });
+	};
+
+	const handleMapSelect = (mapId: string) => {
+		setSelectedMap(mapId);
+		// The map will automatically update when selectedMap state changes
+		// since we're using it in the MapView props
+	};
+
+	const handlePluginPress = (pluginId: string) => {
+		// Placeholder for plugin functionality
+		console.log(`Plugin ${pluginId} pressed`);
+	};
+
+	const handleViewMoreMaps = () => {
+		// Placeholder for view more maps functionality
+		console.log("View more maps pressed");
+	};
+
+	const handleViewMorePlugins = () => {
+		// Placeholder for view more plugins functionality
+		console.log("View more plugins pressed");
 	};
 
 	const onMapLongPress = (e: any) => {
@@ -86,31 +129,53 @@ export default function App() {
 
 	return (
 		<View style={styles.page}>
-			{/* @ts-expect-error styleURL exists on MapLibre MapView at runtime */}
-			<MapView ref={mapRef as any} style={styles.map} onLongPress={onMapLongPress} styleURL="https://demotiles.maplibre.org/style.json">
-				<Camera zoomLevel={5} centerCoordinate={[-95.7129, 37.0902]} />
+			<MapView ref={mapRef as any} style={styles.map} onLongPress={onMapLongPress}>
+				<Camera
+					zoomLevel={
+						mapConfigurations[selectedMap as keyof typeof mapConfigurations].zoomLevel
+					}
+					centerCoordinate={
+						mapConfigurations[selectedMap as keyof typeof mapConfigurations]
+							.centerCoordinate
+					}
+				/>
 				<RasterSource
 					id="satelliteSource"
 					tileUrlTemplates={[
 						"https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg?api_key=c177fb0b-10fa-4ba1-87ba-3a8446a7887d",
 					]}
-					tileSize={256}
-				>
-					<RasterLayer id="satelliteLayer" sourceID="satelliteSource" style={{ rasterOpacity: 1 }} />
+					tileSize={256}>
+					<RasterLayer
+						id="satelliteLayer"
+						sourceID="satelliteSource"
+						style={{ rasterOpacity: 1 }}
+					/>
 				</RasterSource>
 
 				{/* Circle preview source */}
 				{draw.sources.preview && (
 					<ShapeSource id="circlePreviewSource" shape={draw.sources.preview}>
-						<FillLayer id="circlePreviewFill" style={{ fillOpacity: 0.25, fillColor: "#3b82f6" }} />
-						<LineLayer id="circlePreviewLine" style={{ lineColor: "#3b82f6", lineWidth: 2 }} />
+						<FillLayer
+							id="circlePreviewFill"
+							style={{ fillOpacity: 0.25, fillColor: "#3b82f6" }}
+						/>
+						<LineLayer
+							id="circlePreviewLine"
+							style={{ lineColor: "#3b82f6", lineWidth: 2 }}
+						/>
 					</ShapeSource>
 				)}
 				{/* Persisted circles */}
 				{draw.sources.circles.features.length > 0 && (
 					<ShapeSource id="circlesSource" shape={draw.sources.circles}>
-						<FillLayer id="circlesFill" style={{ fillOpacity: 0.2, fillColor: "#2563eb" }} />
-						<LineLayer id="circlesLine" style={{ lineColor: "#2563eb", lineWidth: 2 }} />
+						<FillLayer
+							id="circlesFill"
+							style={{ fillOpacity: 0.2, fillColor: "#2563eb" }}
+						/>
+						<LineLayer
+							id="circlesLine"
+							style={{ lineColor: "#2563eb", lineWidth: 2 }}
+						/>
 					</ShapeSource>
 				)}
 			</MapView>
@@ -128,10 +193,36 @@ export default function App() {
 				backgroundComponent={CustomBackground}
 				handleComponent={CustomHandle}
 				enablePanDownToClose
-				style={styles.bottomSheet}
-			>
+				style={styles.bottomSheet}>
 				<BottomSheetView style={styles.contentContainer}>
-					<Text>Awesome 🎉</Text>
+					<MapsSection
+						onMapSelect={handleMapSelect}
+						onViewMore={handleViewMoreMaps}
+						maps={[
+							{
+								id: "new-york",
+								name: "New York",
+								thumbnail: require("@assets/images/radial-pin.png"), // Placeholder
+								selected: selectedMap === "new-york",
+							},
+							{
+								id: "chicago",
+								name: "Chicago",
+								thumbnail: require("@assets/images/radial-pin.png"), // Placeholder
+								selected: selectedMap === "chicago",
+							},
+							{
+								id: "montgomery",
+								name: "Montgomery",
+								thumbnail: require("@assets/images/radial-pin.png"), // Placeholder
+								selected: selectedMap === "montgomery",
+							},
+						]}
+					/>
+					<PluginsSection
+						onPluginPress={handlePluginPress}
+						onViewMore={handleViewMorePlugins}
+					/>
 				</BottomSheetView>
 			</BottomSheet>
 
@@ -176,8 +267,7 @@ const styles = StyleSheet.create({
 	map: { flex: 1 },
 	contentContainer: {
 		flex: 1,
-		padding: 36,
-		alignItems: "center",
+		padding: 24,
 	},
 	// Toolbar locked at top
 	toolbarContainer: {
@@ -204,5 +294,3 @@ const styles = StyleSheet.create({
 		backgroundColor: "#626A6F",
 	},
 });
-
-
