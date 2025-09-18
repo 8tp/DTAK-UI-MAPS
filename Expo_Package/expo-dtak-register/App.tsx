@@ -64,7 +64,7 @@ const DtakLogoBadge: React.FC = () => (
 
 const isEmail = (value: string): boolean => /.+@.+\..+/.test(value);
 const strongEnough = (value: string): boolean =>
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]).{15,}$/.test(
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{15,}$/.test(
     value
   );
 
@@ -80,9 +80,8 @@ const App: React.FC = () => {
   const [callsign, setCallsign] = useState<string>("");
   const [selfieTaken, setSelfieTaken] = useState<boolean>(false);
   const [ticks, setTicks] = useState<number>(0);
-  const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(
-    null
-  );
+  const [userLocation, setUserLocation] =
+    useState<Location.LocationObject | null>(null);
 
   useEffect(() => {
     if (step !== "creating") {
@@ -226,10 +225,10 @@ const Header: React.FC<HeaderProps> = ({ step, onBack }) => {
     <View style={S.header}>
       <TouchableOpacity
         onPress={onBack}
-        disabled={step === "login" || step === "sign" || step === "done"}
+        disabled={step === "login" || step === "done"}
         style={[
           S.backBtn,
-          (step === "login" || step === "sign" || step === "done") && {
+          (step === "login" || step === "done") && {
             opacity: 0,
           },
         ]}
@@ -363,15 +362,17 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       <Text style={S.subheader}>Mission access</Text>
       <Text style={S.sectionTitle}>Sign in to continue</Text>
       <View style={{ marginTop: 16 }}>
-      <Field
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        placeholder="you@unit.mil"
-      />
+        <Field
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="you@unit.mil"
+        />
         {!passwordValid && password.length > 0 && (
           <Text style={S.passwordHint}>
-            Use 15+ chars with upper, lower, number, and special symbol.
+            {
+              "Use 15+ chars with at least one upper, lower, number, and special symbol. All special characters (e.g. !@#$%^&*()_+-=[]{};':\"\\|,.<>/?`~) are allowed."
+            }
           </Text>
         )}
         <Field
@@ -432,7 +433,9 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({
         />
         {!passwordValid && password.length > 0 && (
           <Text style={S.passwordHint}>
-            Use 15+ chars with upper, lower, number, and special symbol.
+            {
+              "Use 15+ chars with at least one upper, lower, number, and special symbol. All special characters (e.g. !@#$%^&*()_+-=[]{};':\"\\|,.<>/?`~) are allowed."
+            }
           </Text>
         )}
         <Field
@@ -634,10 +637,7 @@ const FinalReady: React.FC<FinalReadyProps> = ({
     <Text style={S.subText}>You’re mission-ready.</Text>
     {location && (
       <Text style={S.locationSummary}>
-        Last known location:
-        {" "}
-        {location.coords.latitude.toFixed(3)}°,
-        {" "}
+        Last known location: {location.coords.latitude.toFixed(3)}°,{" "}
         {location.coords.longitude.toFixed(3)}°
       </Text>
     )}
