@@ -41,7 +41,7 @@
 - **TP-1:** Synchronize mission data across devices even after offline reconnection.
 - **TP-2:** Capture geo-tagged photos with markup tools.
 - **TP-3:** Provide settings screen including dark mode.
-- **TP-4:** Present network connectivity controls/status.
+- **TP-4:** Present network connectivity controls/status (profile menu indicator via connectivity provider).
 - **Mission-Service Dependencies:** Chat infrastructure feeds mission logs; attachments rely on S3 + CDN strategy and encryption.
 
 ## Onboarding (OB-1 – OB-3)
