@@ -247,7 +247,10 @@ const CameraEditScreen = () => {
       }
 
       const permission = await MediaLibrary.requestPermissionsAsync();
-      if (permission.status !== "granted") {
+      const hasAccess =
+        permission.status === "granted" || (permission as { accessPrivileges?: string }).accessPrivileges === "limited";
+
+      if (!hasAccess) {
         Alert.alert("Storage permission required", "Enable photo library access to save annotations.");
         return;
       }

@@ -257,14 +257,6 @@ export default function App() {
 				/>
 			</SafeAreaView>
 
-			<Pressable
-				accessibilityLabel="Open camera"
-				accessibilityHint="Launches the camera capture workflow"
-				onPress={handleCameraPress}
-				style={styles.cameraButton}>
-				<Text style={styles.cameraButtonText}>Camera</Text>
-			</Pressable>
-
 			{/* Bottom drawer always visible */}
 			<BottomSheet
 				ref={sheetRef}
@@ -440,25 +432,6 @@ const styles = StyleSheet.create({
 		top: 0,
 		left: 0,
 		right: 0,
-	},
-	cameraButton: {
-		position: "absolute",
-		right: 24,
-		bottom: 32,
-		backgroundColor: "#1f2933",
-		borderRadius: 24,
-		paddingHorizontal: 20,
-		paddingVertical: 12,
-		elevation: 2,
-		shadowColor: "#000",
-		shadowOpacity: 0.3,
-		shadowOffset: { width: 0, height: 4 },
-		shadowRadius: 6,
-	},
-	cameraButtonText: {
-		color: "#ffffff",
-		fontSize: 16,
-		fontWeight: "600",
 	},
 	// BottomSheet always docked at bottom
 	bottomSheet: {
