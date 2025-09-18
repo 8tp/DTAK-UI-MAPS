@@ -63,7 +63,10 @@ const DtakLogoBadge: React.FC = () => (
 );
 
 const isEmail = (value: string): boolean => /.+@.+\..+/.test(value);
-const strongEnough = (value: string): boolean => value.length >= 8;
+const strongEnough = (value: string): boolean =>
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]).{15,}$/.test(
+    value
+  );
 
 const App: React.FC = () => {
   const [step, setStep] = useState<Step>("login");
@@ -349,9 +352,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
   onSignIn,
   onCreateAccount,
 }) => {
+  const passwordValid = strongEnough(password);
   const canSignIn = useMemo(
-    () => isEmail(email) && strongEnough(password),
-    [email, password]
+    () => isEmail(email) && passwordValid,
+    [email, passwordValid]
   );
 
   return (
@@ -359,12 +363,17 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       <Text style={S.subheader}>Mission access</Text>
       <Text style={S.sectionTitle}>Sign in to continue</Text>
       <View style={{ marginTop: 16 }}>
-        <Field
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@unit.mil"
-        />
+      <Field
+        label="Email"
+        value={email}
+        onChangeText={setEmail}
+        placeholder="you@unit.mil"
+      />
+        {!passwordValid && password.length > 0 && (
+          <Text style={S.passwordHint}>
+            Use 15+ chars with upper, lower, number, and special symbol.
+          </Text>
+        )}
         <Field
           label="Password"
           value={password}
@@ -398,9 +407,10 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({
   setPassword,
   onNext,
 }) => {
+  const passwordValid = strongEnough(password);
   const canProceed = useMemo(
-    () => name.trim().length > 1 && isEmail(email) && strongEnough(password),
-    [name, email, password]
+    () => name.trim().length > 1 && isEmail(email) && passwordValid,
+    [name, email, passwordValid]
   );
 
   return (
@@ -420,6 +430,11 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({
           onChangeText={setEmail}
           placeholder="you@unit.mil"
         />
+        {!passwordValid && password.length > 0 && (
+          <Text style={S.passwordHint}>
+            Use 15+ chars with upper, lower, number, and special symbol.
+          </Text>
+        )}
         <Field
           label="Password"
           value={password}
@@ -762,6 +777,11 @@ const S = StyleSheet.create({
     height: "100%",
     width: "100%",
     resizeMode: "contain",
+  },
+  passwordHint: {
+    color: "#ff7185",
+    fontSize: 13,
+    marginBottom: 8,
   },
   locationError: {
     color: "#ff7185",

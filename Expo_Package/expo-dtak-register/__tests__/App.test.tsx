@@ -31,7 +31,10 @@ describe("App onboarding flow", () => {
 
     fireEvent.changeText(getByPlaceholderText("e.g. Alex Hunter"), "Alex Hunter");
     fireEvent.changeText(getByPlaceholderText("you@unit.mil"), "alex@unit.mil");
-    fireEvent.changeText(getByPlaceholderText("••••••••"), "password123");
+    fireEvent.changeText(
+      getByPlaceholderText("••••••••"),
+      "StrongPassword123!"
+    );
 
     expect(continueButton.props.accessibilityState?.disabled).not.toBe(true);
 
@@ -49,7 +52,10 @@ describe("App onboarding flow", () => {
 
     fireEvent.changeText(getByPlaceholderText("e.g. Alex Hunter"), "Alex Hunter");
     fireEvent.changeText(getByPlaceholderText("you@unit.mil"), "alex@unit.mil");
-    fireEvent.changeText(getByPlaceholderText("••••••••"), "password123");
+    fireEvent.changeText(
+      getByPlaceholderText("••••••••"),
+      "StrongPassword123!"
+    );
     fireEvent.press(getByRole("button", { name: "Continue" }));
 
     fireEvent.changeText(getByPlaceholderText("123 Mission Rd, City"), "500 Base Lane, Tampa");

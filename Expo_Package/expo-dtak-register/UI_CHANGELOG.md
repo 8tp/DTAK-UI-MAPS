@@ -13,6 +13,7 @@ Date: 2025-09-19
 - Increased the face-scan loader footprint to 220×220 so the identity animation reads clearly during account creation.
 - Reworked the Creating step to display only the face-scan animation as a full-screen interstitial, removing the previous progress text.
 - Location prompt now calls `expo-location` to request foreground permission, surfaces errors, and persists the retrieved coordinates for later use in the confirmation screen.
+- Password inputs now enforce 15+ char strength with mixed case, numeric, and symbol requirements, surfacing inline guidance when the criteria are not met.
 
 ## Notes
 - Login uses the existing typography, card, and CTA primitives to stay aligned with the onboarding visuals.

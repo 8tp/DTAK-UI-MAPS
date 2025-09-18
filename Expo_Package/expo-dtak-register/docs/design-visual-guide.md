@@ -51,6 +51,7 @@ All text leverages the default system font (SF Pro on iOS). We enforce uppercase
 - **LoginScreen:** Mirrors signup styling with only email/password fields, primary CTA (`Sign in`) and a secondary `GhostBtn` that routes into account creation.
 - **FaceScanLoader:** 220×220 looping image sequence built from `assets/Face Scan {1-4}.png`; the Creating step now renders this loader full-screen to reinforce identity verification during account creation.
 - **LocationPromptScreen:** Requests foreground permission via `expo-location`, shows spinner/error states while resolving coordinates, and surfaces the captured lat/long summary on the confirmation screen when available.
+- **Password Validation Hint:** Inline helper text (system red) appears above password inputs when the 15+ char mixed-case/number/symbol requirement is not met.
 
 ## Plugin Preview Styling (MapPluginsScreen)
 
