@@ -7,6 +7,8 @@ Date: 2025-09-18
 - Added `tsconfig.json`, Jest test match coverage for `*.test.tsx`, and a `typecheck` npm script.
 - Refined CTA/Touchable accessibility roles so Testing Library can target buttons via `getByRole`.
 - `package.json` now declares TypeScript/tooling devDependencies (`typescript`, `@types/react`, `@types/react-native`, `@types/jest`).
+- Added `docs/design-visual-guide.md` to document current color/typography tokens.
+- Introduced `src/components/ui-library.tsx` as a reusable component library for future screens.
 
 ## Notes
 - New dev dependencies require an `npm install`; infra with restricted network must pull packages before running `npm run typecheck` or `npm test`.

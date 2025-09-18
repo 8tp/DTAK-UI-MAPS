@@ -10,6 +10,10 @@
 - Updated Jest matching to cover `*.test.tsx` and kept Testing Library flows green under fake timers.
 - Dev dependencies now include `typescript`, `@types/react`, `@types/react-native`, and `@types/jest` for end-to-end typing.
 
+**2025-09-18 – Design & Component Library Docs**
+- Added `docs/design-visual-guide.md` to capture color tokens, typography, and spacing rules for quick reference.
+- Created `src/components/ui-library.tsx` that centralizes reusable primitives (logo badge, Card, CTA, GhostButton, Field, Loader) for future screen work.
+
 **What I Implemented**
 - Single portable RN app with a state-driven flow (no external nav dependencies) in `MVP - Onboarding, Map/RN_App.jsx`:
   - Sign Up (Register Screen 1 reference): name, email, password, CTA.
