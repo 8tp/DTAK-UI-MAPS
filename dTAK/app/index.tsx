@@ -1,3 +1,4 @@
+import AccountMenu from "@components/AccountMenu";
 import MapsSection from "@components/MapsSection";
 import PluginsSection from "@components/PluginsSection";
 import Toolbar from "@components/Toolbar";
@@ -16,19 +17,22 @@ import {
 	ShapeSource,
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
-import React, { useRef, useState } from "react";
-import { GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useMemo, useRef, useState } from "react";
+import { GestureResponderEvent, StyleSheet, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 import { RadialMenu } from "../features/map/components/RadialMenu";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
+import { useDrawSquare } from "../features/map/hooks/useDrawSquare";
 import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
 import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
 
+const BOTTOM_SHEET_BACKGROUND = "#26292B";
+
 const CustomBackground = ({ style }: BottomSheetBackgroundProps) => (
-	<View style={[style, { backgroundColor: "#26292B", borderRadius: 16 }]} />
+	<View style={[style, { backgroundColor: BOTTOM_SHEET_BACKGROUND, borderRadius: 16 }]} />
 );
 
 const CustomHandle = (_props: BottomSheetHandleProps) => (
@@ -57,26 +61,38 @@ const mapConfigurations = {
 };
 
 export default function App() {
+	const insets = useSafeAreaInsets();
 	const [visible, setVisible] = useState(false);
 	const [anchor, setAnchor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [coordinate, setCoordinate] = useState<[number, number] | undefined>(undefined);
 	const [selectedMap, setSelectedMap] = useState<string>("new-york");
+	const [accountMenuVisible, setAccountMenuVisible] = useState(false);
 	const [offlineMode, setOfflineMode] = useState<boolean>(false);
 	const [showOfflineManager, setShowOfflineManager] = useState<boolean>(false);
 	const mapRef = useRef<MapViewRef | null>(null);
 	const draw = useDrawCircle();
+	const drawSquare = useDrawSquare();
 	const { select } = useFeatureDeletion();
 	const offline = useOfflineMaps();
 
 	const sheetRef = useRef<BottomSheet>(null);
+	const snapPoints = useMemo(() => ["32%", "55%", "90%"], []);
+	const [bottomSheetIndex, setBottomSheetIndex] = useState(2);
+	const isBottomSheetExpanded = bottomSheetIndex > -1;
 
 	const handleSelect = (action: any) => {
 		setVisible(false);
-		if (action === "circle" && mapRef.current) {
-			draw.start(mapRef.current);
-			return;
-		}
-		performAction(action, { screen: anchor, coordinate });
+		const ctx = {
+			screen: anchor,
+			coordinate,
+			startCircle: () => {
+				if (mapRef.current) draw.start(mapRef.current);
+			},
+			startSquare: () => {
+				if (mapRef.current) drawSquare.start(mapRef.current);
+			},
+		} as const;
+		performAction(action, ctx);
 	};
 
 	const handleMapSelect = (mapId: string) => {
@@ -114,6 +130,16 @@ export default function App() {
 		}
 
 		if (Array.isArray(coord) && coord.length >= 2) {
+			const square = drawSquare.findSquareAtCoordinate([coord[0], coord[1]]);
+			if (square) {
+				select({
+					id: (square.properties as any).id,
+					type: "square",
+					delete: () => drawSquare.removeSquareById((square.properties as any).id),
+				});
+				setVisible(false);
+				return;
+			}
 			const circle = draw.findCircleAtCoordinate([coord[0], coord[1]]);
 			if (circle) {
 				select({
@@ -189,21 +215,49 @@ export default function App() {
 						/>
 					</ShapeSource>
 				)}
+				{/* Square preview source */}
+				{drawSquare.sources.preview && (
+					<ShapeSource id="squarePreviewSource" shape={drawSquare.sources.preview}>
+						<FillLayer
+							id="squarePreviewFill"
+							style={{ fillOpacity: 0.25, fillColor: "#22c55e" }}
+						/>
+						<LineLayer
+							id="squarePreviewLine"
+							style={{ lineColor: "#22c55e", lineWidth: 2 }}
+						/>
+					</ShapeSource>
+				)}
+				{/* Persisted squares */}
+				{drawSquare.sources.squares.features.length > 0 && (
+					<ShapeSource id="squaresSource" shape={drawSquare.sources.squares}>
+						<FillLayer
+							id="squaresFill"
+							style={{ fillOpacity: 0.2, fillColor: "#16a34a" }}
+						/>
+						<LineLayer
+							id="squaresLine"
+							style={{ lineColor: "#16a34a", lineWidth: 2 }}
+						/>
+					</ShapeSource>
+				)}
 			</MapView>
 
 			{/* Toolbar fixed at the top */}
 			<SafeAreaView style={styles.toolbarContainer}>
-				<Toolbar />
+				<Toolbar onAccountPress={() => setAccountMenuVisible((prev) => !prev)} />
 			</SafeAreaView>
 
 			{/* Bottom drawer always visible */}
 			<BottomSheet
 				ref={sheetRef}
-				index={2}
-				snapPoints={["25%", "50%", "90%"]}
+				index={bottomSheetIndex}
+				snapPoints={snapPoints}
 				backgroundComponent={CustomBackground}
 				handleComponent={CustomHandle}
 				enablePanDownToClose
+				bottomInset={insets.bottom}
+				onChange={(index) => setBottomSheetIndex(index ?? 0)}
 				style={styles.bottomSheet}>
 				<BottomSheetView style={styles.contentContainer}>
 					<View
@@ -282,6 +336,18 @@ export default function App() {
 					)}
 				</BottomSheetView>
 			</BottomSheet>
+			<View
+				pointerEvents="none"
+				style={[
+					styles.bottomInsetOverlay,
+					{
+						height: insets.bottom,
+						backgroundColor: isBottomSheetExpanded
+							? BOTTOM_SHEET_BACKGROUND
+							: "transparent",
+					},
+				]}
+			/>
 
 			{/* Delete overlay */}
 			<DeleteOverlay />
@@ -292,6 +358,11 @@ export default function App() {
 				anchor={anchor}
 				onSelect={handleSelect}
 				onRequestClose={() => setVisible(false)}
+			/>
+
+			<AccountMenu
+				visible={accountMenuVisible}
+				onClose={() => setAccountMenuVisible(false)}
 			/>
 
 			{/* Gesture overlay for draw circle mode */}
@@ -315,6 +386,26 @@ export default function App() {
 					}}
 				/>
 			)}
+			{drawSquare.mode === "DRAW_SQUARE" && (
+				<View
+					style={StyleSheet.absoluteFill}
+					pointerEvents="box-only"
+					onStartShouldSetResponder={() => true}
+					onMoveShouldSetResponder={() => true}
+					onResponderGrant={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						drawSquare.onTap([locationX, locationY]);
+					}}
+					onResponderMove={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						drawSquare.onDrag([locationX, locationY]);
+					}}
+					onResponderRelease={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						drawSquare.onRelease([locationX, locationY]);
+					}}
+				/>
+			)}
 		</View>
 	);
 }
@@ -335,6 +426,12 @@ const styles = StyleSheet.create({
 	},
 	// BottomSheet always docked at bottom
 	bottomSheet: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		bottom: 0,
+	},
+	bottomInsetOverlay: {
 		position: "absolute",
 		left: 0,
 		right: 0,

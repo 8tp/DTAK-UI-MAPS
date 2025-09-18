@@ -13,7 +13,7 @@ export const DeleteOverlay: React.FC = () => {
             <View
                 style={[
                     styles.container,
-                    { top: insets.top + 12, right: insets.right + 12 },
+                    { top: insets.top + 60, right: insets.right + 12 },
                 ]}
                 pointerEvents="box-none"
             >
