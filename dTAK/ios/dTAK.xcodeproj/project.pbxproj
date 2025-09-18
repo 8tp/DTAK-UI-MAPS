@@ -9,27 +9,27 @@
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		6A4E884508EADA0F444541C2 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F644C8D943D291BF480BC986 /* ExpoModulesProvider.swift */; };
-		97A058E0281C68A48E5F2F62 /* libPods-dTAK.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 166E4358DBB5709FCA530B58 /* libPods-dTAK.a */; };
+		5364D69F634464B7856F04B7 /* libPods-dTAK.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FE4CCE2CD754300801ED52E9 /* libPods-dTAK.a */; };
+		622F63D04B93005903341DBA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 78EC2B1B7EBE80FA671BA1BB /* PrivacyInfo.xcprivacy */; };
+		7038032AB4FB2FF7A8E807F1 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37182C728D18AD7E213B78DE /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		F194AFF5F7822CC2B39D5384 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0442D3AF8754350865174400 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0442D3AF8754350865174400 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = dTAK/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* dTAK.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = dTAK.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = dTAK/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = dTAK/Info.plist; sourceTree = "<group>"; };
-		166E4358DBB5709FCA530B58 /* libPods-dTAK.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-dTAK.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		28E1D9D3899EE566ABB9ABC2 /* Pods-dTAK.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-dTAK.release.xcconfig"; path = "Target Support Files/Pods-dTAK/Pods-dTAK.release.xcconfig"; sourceTree = "<group>"; };
-		5155F84E8B8FFC55EB7E1D6C /* Pods-dTAK.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-dTAK.debug.xcconfig"; path = "Target Support Files/Pods-dTAK/Pods-dTAK.debug.xcconfig"; sourceTree = "<group>"; };
+		307CA8F5DCA30AC02A645ABC /* Pods-dTAK.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-dTAK.release.xcconfig"; path = "Target Support Files/Pods-dTAK/Pods-dTAK.release.xcconfig"; sourceTree = "<group>"; };
+		37182C728D18AD7E213B78DE /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-dTAK/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		78EC2B1B7EBE80FA671BA1BB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = dTAK/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A94D4D804F6D5368ED9B8C56 /* Pods-dTAK.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-dTAK.debug.xcconfig"; path = "Target Support Files/Pods-dTAK/Pods-dTAK.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = dTAK/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = dTAK/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* dTAK-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "dTAK-Bridging-Header.h"; path = "dTAK/dTAK-Bridging-Header.h"; sourceTree = "<group>"; };
-		F644C8D943D291BF480BC986 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-dTAK/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		FE4CCE2CD754300801ED52E9 /* libPods-dTAK.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-dTAK.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,13 +37,29 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				97A058E0281C68A48E5F2F62 /* libPods-dTAK.a in Frameworks */,
+				5364D69F634464B7856F04B7 /* libPods-dTAK.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		07F3EC6785E7CA35F2912FFF /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				0A9EF5D530B34F3569F1248C /* dTAK */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
+		0A9EF5D530B34F3569F1248C /* dTAK */ = {
+			isa = PBXGroup;
+			children = (
+				37182C728D18AD7E213B78DE /* ExpoModulesProvider.swift */,
+			);
+			name = dTAK;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* dTAK */ = {
 			isa = PBXGroup;
 			children = (
@@ -53,7 +69,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				0442D3AF8754350865174400 /* PrivacyInfo.xcprivacy */,
+				78EC2B1B7EBE80FA671BA1BB /* PrivacyInfo.xcprivacy */,
 			);
 			name = dTAK;
 			sourceTree = "<group>";
@@ -62,19 +78,9 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				166E4358DBB5709FCA530B58 /* libPods-dTAK.a */,
+				FE4CCE2CD754300801ED52E9 /* libPods-dTAK.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		5BDB235653AAA45D62F4E7FE /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				5155F84E8B8FFC55EB7E1D6C /* Pods-dTAK.debug.xcconfig */,
-				28E1D9D3899EE566ABB9ABC2 /* Pods-dTAK.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -91,8 +97,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				5BDB235653AAA45D62F4E7FE /* Pods */,
-				E5A00CAC397699CF9860B510 /* ExpoModulesProviders */,
+				9266EA11B16E985C946CEE61 /* Pods */,
+				07F3EC6785E7CA35F2912FFF /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -107,6 +113,16 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		9266EA11B16E985C946CEE61 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				A94D4D804F6D5368ED9B8C56 /* Pods-dTAK.debug.xcconfig */,
+				307CA8F5DCA30AC02A645ABC /* Pods-dTAK.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -114,22 +130,6 @@
 			);
 			name = Supporting;
 			path = dTAK/Supporting;
-			sourceTree = "<group>";
-		};
-		E5A00CAC397699CF9860B510 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				ECB27BECB90FCABFBA589C6A /* dTAK */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
-		ECB27BECB90FCABFBA589C6A /* dTAK */ = {
-			isa = PBXGroup;
-			children = (
-				F644C8D943D291BF480BC986 /* ExpoModulesProvider.swift */,
-			);
-			name = dTAK;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -140,14 +140,14 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "dTAK" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				1D64CC4930784BCAFD443ABB /* [Expo] Configure project */,
+				5F4AF0A055F77AFDFE76875E /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				F028A165D6B840ECAAD81E3D /* Remove signature files (Xcode workaround) */,
-				674EA2D7BA636A531F0339D6 /* [CP] Embed Pods Frameworks */,
+				5974FD4B10514912B8033F22 /* Remove signature files (Xcode workaround) */,
+				2F97B5DB0FF6DCA853C34171 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -155,7 +155,7 @@
 			);
 			name = dTAK;
 			packageProductDependencies = (
-				AB91409F080B0EDD1C336FA7 /* MapLibre */,
+				8ED3890D8D510F88BC39F5AE /* MapLibre */,
 			);
 			productName = dTAK;
 			productReference = 13B07F961A680F5B00A75B9A /* dTAK.app */;
@@ -184,7 +184,7 @@
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			packageReferences = (
-				4C79142FA9AB9E67765CE414 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
+				C1FB2B7AAF3A0D3F001A7239 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
 			);
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
@@ -203,7 +203,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				F194AFF5F7822CC2B39D5384 /* PrivacyInfo.xcprivacy in Resources */,
+				622F63D04B93005903341DBA /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -249,7 +249,43 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		1D64CC4930784BCAFD443ABB /* [Expo] Configure project */ = {
+		2F97B5DB0FF6DCA853C34171 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-dTAK/Pods-dTAK-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-dTAK/Pods-dTAK-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		5974FD4B10514912B8033F22 /* Remove signature files (Xcode workaround) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Remove signature files (Xcode workaround)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
+		};
+		5F4AF0A055F77AFDFE76875E /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -273,28 +309,6 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-dTAK/expo-configure-project.sh\"\n";
 		};
-		674EA2D7BA636A531F0339D6 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-dTAK/Pods-dTAK-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-dTAK/Pods-dTAK-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -305,7 +319,9 @@
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoMediaLibrary/ExpoMediaLibrary_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoSystemUI/ExpoSystemUI_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RNSVG/RNSVGFilters.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-cxxreact/React-cxxreact_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/SDWebImage/SDWebImage.bundle",
@@ -315,7 +331,9 @@
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoConstants_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoMediaLibrary_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoSystemUI_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNSVGFilters.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-cxxreact_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/SDWebImage.bundle",
@@ -325,20 +343,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-dTAK/Pods-dTAK-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		F028A165D6B840ECAAD81E3D /* Remove signature files (Xcode workaround) */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Remove signature files (Xcode workaround)";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -347,7 +351,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				6A4E884508EADA0F444541C2 /* ExpoModulesProvider.swift in Sources */,
+				7038032AB4FB2FF7A8E807F1 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,7 +360,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5155F84E8B8FFC55EB7E1D6C /* Pods-dTAK.debug.xcconfig */;
+			baseConfigurationReference = A94D4D804F6D5368ED9B8C56 /* Pods-dTAK.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -392,7 +396,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 28E1D9D3899EE566ABB9ABC2 /* Pods-dTAK.release.xcconfig */;
+			baseConfigurationReference = 307CA8F5DCA30AC02A645ABC /* Pods-dTAK.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -562,7 +566,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		4C79142FA9AB9E67765CE414 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+		C1FB2B7AAF3A0D3F001A7239 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/maplibre/maplibre-gl-native-distribution";
 			requirement = {
@@ -573,9 +577,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AB91409F080B0EDD1C336FA7 /* MapLibre */ = {
+		8ED3890D8D510F88BC39F5AE /* MapLibre */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4C79142FA9AB9E67765CE414 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
+			package = C1FB2B7AAF3A0D3F001A7239 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
 			productName = MapLibre;
 		};
 /* End XCSwiftPackageProductDependency section */

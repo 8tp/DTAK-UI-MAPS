@@ -17,6 +17,7 @@ import {
 	ShapeSource,
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
+import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -62,6 +63,7 @@ const mapConfigurations = {
 };
 
 export default function App() {
+	const router = useRouter();
 	const insets = useSafeAreaInsets();
 	const [visible, setVisible] = useState(false);
 	const [anchor, setAnchor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -78,6 +80,10 @@ export default function App() {
 	const offline = useOfflineMaps();
 
 	const sheetRef = useRef<BottomSheet>(null);
+
+	const handleCameraPress = () => {
+		router.push("/camera" as never);
+	};
 	const snapPoints = useMemo(() => ["32%", "55%", "90%"], []);
 	const [bottomSheetIndex, setBottomSheetIndex] = useState(2);
 	const isBottomSheetExpanded = bottomSheetIndex > -1;
@@ -293,7 +299,10 @@ export default function App() {
 
 			{/* Toolbar fixed at the top */}
 			<SafeAreaView style={styles.toolbarContainer}>
-				<Toolbar onAccountPress={() => setAccountMenuVisible((prev) => !prev)} />
+				<Toolbar
+					onAccountPress={() => setAccountMenuVisible((prev) => !prev)}
+					onCameraPress={handleCameraPress}
+				/>
 			</SafeAreaView>
 
 			{/* Bottom drawer always visible */}
