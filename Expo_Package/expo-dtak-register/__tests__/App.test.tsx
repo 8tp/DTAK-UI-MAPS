@@ -62,19 +62,8 @@ describe("App onboarding flow", () => {
     fireEvent.changeText(getByPlaceholderText("e.g. Ranger-2"), "Ranger-2");
     fireEvent.press(getByRole("button", { name: "Continue" }));
 
-    const captureButton = await waitFor(() =>
-      getByRole("button", { name: "Take Selfie" })
-    );
-
-    await act(async () => {
-      fireEvent.press(captureButton);
-    });
-
-    const continueButton = await waitFor(() =>
-      getByRole("button", { name: "Looks good — Continue" })
-    );
-
-    fireEvent.press(continueButton);
+    fireEvent.press(getByRole("button", { name: "Take Selfie" }));
+    fireEvent.press(getByRole("button", { name: "Looks good — Continue" }));
 
     expect(getByTestId("face-scan-loader")).toBeTruthy();
 
