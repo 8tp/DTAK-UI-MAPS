@@ -19,7 +19,7 @@ import {
 } from "@maplibre/maplibre-react-native";
 import React, { useMemo, useRef, useState } from "react";
 import { useRouter } from "expo-router";
-import { GestureResponderEvent, StyleSheet, TouchableOpacity, View, Text } from "react-native";
+import { GestureResponderEvent, StyleSheet, TouchableOpacity, View, Text, Pressable } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
@@ -252,10 +252,18 @@ export default function App() {
 			{/* Toolbar fixed at the top */}
 			<SafeAreaView style={styles.toolbarContainer}>
 				<Toolbar
-				onAccountPress={() => setAccountMenuVisible((prev) => !prev)}
-				onCameraPress={handleCameraPress}
-			/>
+					onAccountPress={() => setAccountMenuVisible((prev) => !prev)}
+					onCameraPress={handleCameraPress}
+				/>
 			</SafeAreaView>
+
+			<Pressable
+				accessibilityLabel="Open camera"
+				accessibilityHint="Launches the camera capture workflow"
+				onPress={handleCameraPress}
+				style={styles.cameraButton}>
+				<Text style={styles.cameraButtonText}>Camera</Text>
+			</Pressable>
 
 			{/* Bottom drawer always visible */}
 			<BottomSheet
@@ -432,6 +440,25 @@ const styles = StyleSheet.create({
 		top: 0,
 		left: 0,
 		right: 0,
+	},
+	cameraButton: {
+		position: "absolute",
+		right: 24,
+		bottom: 32,
+		backgroundColor: "#1f2933",
+		borderRadius: 24,
+		paddingHorizontal: 20,
+		paddingVertical: 12,
+		elevation: 2,
+		shadowColor: "#000",
+		shadowOpacity: 0.3,
+		shadowOffset: { width: 0, height: 4 },
+		shadowRadius: 6,
+	},
+	cameraButtonText: {
+		color: "#ffffff",
+		fontSize: 16,
+		fontWeight: "600",
 	},
 	// BottomSheet always docked at bottom
 	bottomSheet: {
