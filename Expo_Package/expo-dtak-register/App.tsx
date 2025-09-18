@@ -9,6 +9,7 @@ import React, {
   useState,
 } from "react";
 import {
+  ActivityIndicator,
   Image,
   SafeAreaView,
   ScrollView,
@@ -20,6 +21,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import * as Location from "expo-location";
 import MapPluginsScreen from "./MapPluginsScreen";
 
 type Step =
@@ -75,6 +77,9 @@ const App: React.FC = () => {
   const [callsign, setCallsign] = useState<string>("");
   const [selfieTaken, setSelfieTaken] = useState<boolean>(false);
   const [ticks, setTicks] = useState<number>(0);
+  const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(
+    null
+  );
 
   useEffect(() => {
     if (step !== "creating") {
@@ -159,7 +164,13 @@ const App: React.FC = () => {
           )}
           {step === "creating" && <CreatingScreen ticks={ticks} />}
           {step === "location" && (
-            <LocationPromptScreen onGrant={() => setStep("done")} />
+            <LocationPromptScreen
+              onGrant={(position) => {
+                setUserLocation(position);
+                setStep("done");
+              }}
+              onSkip={() => setStep("done")}
+            />
           )}
           {step === "done" && (
             <FinalReady
@@ -167,6 +178,7 @@ const App: React.FC = () => {
                 setPluginsReturnStep("done");
                 setStep("plugins");
               }}
+              location={userLocation}
             />
           )}
         </ScrollView>
@@ -520,34 +532,100 @@ const CreatingScreen: React.FC<CreatingScreenProps> = ({ ticks: _unused }) => (
 );
 
 type LocationPromptScreenProps = {
-  onGrant: () => void;
+  onGrant: (position: Location.LocationObject) => void;
+  onSkip: () => void;
 };
 
 const LocationPromptScreen: React.FC<LocationPromptScreenProps> = ({
   onGrant,
-}) => (
-  <Card>
-    <View style={S.mapBadge}>
-      <Text style={S.mapBadgeTxt}>📍</Text>
-    </View>
-    <Text style={S.sectionTitle}>We need your location</Text>
-    <Text style={S.subText}>
-      Used for team positioning and proximity alerts. Shared only with your
-      authorized mission group.
-    </Text>
-    <CTA title="Grant Access" onPress={onGrant} />
-    <GhostBtn title="Not now" onPress={() => {}} />
-  </Card>
-);
+  onSkip,
+}) => {
+  const [requesting, setRequesting] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleGrant = async (): Promise<void> => {
+    if (requesting) {
+      return;
+    }
+
+    setRequesting(true);
+    setError(null);
+
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status !== Location.PermissionStatus.GRANTED) {
+        setError("Permission denied. Enable location to continue.");
+        setRequesting(false);
+        return;
+      }
+
+      const lastKnown = await Location.getLastKnownPositionAsync();
+      const position =
+        lastKnown ??
+        (await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+          mayShowUserSettingsDialog: true,
+        }));
+
+      if (!position) {
+        setError("Unable to determine your current position.");
+        setRequesting(false);
+        return;
+      }
+
+      onGrant(position);
+    } catch (caughtError) {
+      setError("Failed to retrieve location. Please try again.");
+    } finally {
+      setRequesting(false);
+    }
+  };
+
+  return (
+    <Card>
+      <View style={S.mapBadge}>
+        <Text style={S.mapBadgeTxt}>📍</Text>
+      </View>
+      <Text style={S.sectionTitle}>We need your location</Text>
+      <Text style={S.subText}>
+        Used for team positioning and proximity alerts. Shared only with your
+        authorized mission group.
+      </Text>
+      {error && <Text style={S.locationError}>{error}</Text>}
+      {requesting && (
+        <View style={S.locationStatusRow}>
+          <ActivityIndicator color={T.primary} />
+          <Text style={S.locationStatusTxt}>Securing coordinates…</Text>
+        </View>
+      )}
+      <CTA title="Grant Access" onPress={handleGrant} disabled={requesting} />
+      <GhostBtn title="Not now" onPress={onSkip} />
+    </Card>
+  );
+};
 
 type FinalReadyProps = {
   onPreviewPlugins: () => void;
+  location: Location.LocationObject | null;
 };
 
-const FinalReady: React.FC<FinalReadyProps> = ({ onPreviewPlugins }) => (
+const FinalReady: React.FC<FinalReadyProps> = ({
+  onPreviewPlugins,
+  location,
+}) => (
   <Card>
     <Text style={S.sectionTitle}>Setup complete</Text>
     <Text style={S.subText}>You’re mission-ready.</Text>
+    {location && (
+      <Text style={S.locationSummary}>
+        Last known location:
+        {" "}
+        {location.coords.latitude.toFixed(3)}°,
+        {" "}
+        {location.coords.longitude.toFixed(3)}°
+      </Text>
+    )}
     <TouchableOpacity
       style={S.primaryBtn}
       onPress={onPreviewPlugins}
@@ -684,6 +762,26 @@ const S = StyleSheet.create({
     height: "100%",
     width: "100%",
     resizeMode: "contain",
+  },
+  locationError: {
+    color: "#ff7185",
+    fontSize: 14,
+    marginTop: 12,
+  },
+  locationStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+  },
+  locationStatusTxt: {
+    color: T.sub,
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  locationSummary: {
+    color: T.sub,
+    fontSize: 14,
+    marginTop: 12,
   },
   mapBadge: {
     alignSelf: "center",

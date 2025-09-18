@@ -12,6 +12,7 @@ Date: 2025-09-19
 - Swapped the creating-state loader to an animated face-scan sequence sourced from `assets/Face Scan {1-4}.png`, aligning the visual with the identity verification theme.
 - Increased the face-scan loader footprint to 220×220 so the identity animation reads clearly during account creation.
 - Reworked the Creating step to display only the face-scan animation as a full-screen interstitial, removing the previous progress text.
+- Location prompt now calls `expo-location` to request foreground permission, surfaces errors, and persists the retrieved coordinates for later use in the confirmation screen.
 
 ## Notes
 - Login uses the existing typography, card, and CTA primitives to stay aligned with the onboarding visuals.
