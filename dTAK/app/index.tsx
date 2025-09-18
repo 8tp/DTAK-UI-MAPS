@@ -27,6 +27,9 @@ import { RadialMenu } from "../features/map/components/RadialMenu";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useDrawSquare } from "../features/map/hooks/useDrawSquare";
 import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
+import { MarkersOverlay } from "../features/markers/components/MarkersOverlay";
+import { useMarkers } from "../features/markers/state/MarkersProvider";
+import { MarkerCreationOverlay, type MarkerCreationOverlayHandle } from "../features/markers/components/MarkerCreationOverlay";
 import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
 import type { BBox } from "../features/offline/tiles";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
@@ -78,6 +81,8 @@ export default function App() {
 	const drawSquare = useDrawSquare();
 	const { select } = useFeatureDeletion();
 	const offline = useOfflineMaps();
+	const { state, dispatch } = useMarkers();
+	const markerCreationRef = useRef<MarkerCreationOverlayHandle | null>(null);
 
 	const sheetRef = useRef<BottomSheet>(null);
 
@@ -98,6 +103,11 @@ export default function App() {
 			},
 			startSquare: () => {
 				if (mapRef.current) drawSquare.start(mapRef.current);
+			},
+			startMarker: () => {
+				if (mapRef.current && anchor) {
+					markerCreationRef.current?.startAtScreenPoint(mapRef.current, [anchor.x, anchor.y]);
+				}
 			},
 		} as const;
 		performAction(action, ctx);
@@ -295,6 +305,10 @@ export default function App() {
 						/>
 					</ShapeSource>
 				)}
+			{/* Markers overlay */}
+				<MarkersOverlay />
+				{/* Marker creation overlay with preview + modal (must be inside MapView) */}
+				<MarkerCreationOverlay ref={markerCreationRef} />
 			</MapView>
 
 			{/* Toolbar fixed at the top */}
@@ -468,6 +482,7 @@ export default function App() {
 					}}
 				/>
 			)}
+
 		</View>
 	);
 }

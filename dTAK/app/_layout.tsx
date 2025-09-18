@@ -5,13 +5,15 @@ import "react-native-get-random-values";
 import { ConnectivityProvider } from "../features/connectivity";
 import { FeatureDeletionProvider } from "../features/map/hooks/useFeatureDeletion";
 import { CameraSessionProvider } from "../src/features/camera/CameraSessionContext";
+import { MarkersProvider } from "../features/markers/state/MarkersProvider";
 
 export default function RootLayout() {
 	return (
-		<FeatureDeletionProvider>
-			<CameraSessionProvider>
-				<ConnectivityProvider>
-					<GestureHandlerRootView style={{ flex: 1 }}>
+        <FeatureDeletionProvider>
+            <MarkersProvider>
+                <CameraSessionProvider>
+                    <ConnectivityProvider>
+                        <GestureHandlerRootView style={{ flex: 1 }}>
 						<Stack
 							screenOptions={{
 								headerShown: false,
@@ -21,9 +23,10 @@ export default function RootLayout() {
 							<Stack.Screen name="camera/preview" />
 							<Stack.Screen name="camera/edit" />
 						</Stack>
-					</GestureHandlerRootView>
-				</ConnectivityProvider>
-			</CameraSessionProvider>
-		</FeatureDeletionProvider>
+                        </GestureHandlerRootView>
+                    </ConnectivityProvider>
+                </CameraSessionProvider>
+            </MarkersProvider>
+        </FeatureDeletionProvider>
 	);
 }

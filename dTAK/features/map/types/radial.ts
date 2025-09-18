@@ -25,6 +25,7 @@ export type RadialSelectContext = {
 	coordinate?: [number, number];
 	startCircle?: () => void;
 	startSquare?: () => void;
+	startMarker?: () => void;
 };
 
 
