@@ -18,7 +18,7 @@ import {
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
 import React, { useMemo, useRef, useState } from "react";
-import { GestureResponderEvent, StyleSheet, View } from "react-native";
+import { GestureResponderEvent, StyleSheet, TouchableOpacity, View, Text } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
