@@ -14,6 +14,9 @@ type MapData = {
 	name: string;
 	thumbnail: any;
 	selected?: boolean;
+	// Optional badge
+	badgeText?: string;
+	badgeColor?: string;
 };
 
 type MapsSectionProps = {
@@ -46,6 +49,8 @@ export default function MapsSection({
 						name={map.name}
 						thumbnail={map.thumbnail}
 						selected={map.selected}
+						badgeText={map.badgeText}
+						badgeColor={map.badgeColor}
 						onPress={() => onMapSelect?.(map.id)}
 					/>
 				))}

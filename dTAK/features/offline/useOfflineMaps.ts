@@ -1,5 +1,5 @@
 import NetInfo from "@react-native-community/netinfo";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	OfflinePack,
@@ -37,7 +37,11 @@ export function useOfflineMaps() {
 	const [isOnline, setIsOnline] = useState<boolean>(true);
 
 	useEffect(() => {
-		let sub = NetInfo.addEventListener((state) => setIsOnline(Boolean(state.isConnected)));
+		const sub = NetInfo.addEventListener((state) => {
+			const reachable =
+				state.isInternetReachable == null ? state.isConnected : state.isInternetReachable;
+			setIsOnline(Boolean(reachable));
+		});
 		return () => sub && sub();
 	}, []);
 
@@ -121,11 +125,26 @@ export function useOfflineMaps() {
 						status: pack.status,
 					});
 					await upsertPack(pack);
+					// Update in-memory state so UI reflects progress without waiting for reload()
+					setPacks((prev) => {
+						const next = [...prev];
+						const i = next.findIndex((p) => p.id === pack.id);
+						if (i >= 0) next[i] = { ...pack };
+						else next.push({ ...pack });
+						return next;
+					});
 				} catch (e: any) {
 					pack.status = "error";
 					pack.updatedAt = Date.now();
 					pack.errorMessage = String(e?.message ?? e);
 					await upsertPack(pack);
+					setPacks((prev) => {
+						const next = [...prev];
+						const i = next.findIndex((p) => p.id === pack.id);
+						if (i >= 0) next[i] = { ...pack };
+						else next.push({ ...pack });
+						return next;
+					});
 					reload();
 					active--;
 					return;
@@ -135,6 +154,13 @@ export function useOfflineMaps() {
 					pack.status = "completed";
 					pack.updatedAt = Date.now();
 					await upsertPack(pack);
+					setPacks((prev) => {
+						const next = [...prev];
+						const i = next.findIndex((p) => p.id === pack.id);
+						if (i >= 0) next[i] = { ...pack };
+						else next.push({ ...pack });
+						return next;
+					});
 					reload();
 					return;
 				}
@@ -173,14 +199,112 @@ export function useOfflineMaps() {
 	);
 
 	const getLocalTemplate = useCallback(
-		(mapId: string, ext: "jpg" | "png" = "jpg") =>
-			`file://${mapTilesDir(mapId)}/{z}/{x}/{y}.${ext}`,
+		(mapId: string, ext: "jpg" | "png" = "jpg") => `${mapTilesDir(mapId)}/{z}/{x}/{y}.${ext}`,
 		[]
 	);
 
+	// Helpers: aggregate progress and coverage
+	const listPacksForMap = useCallback(
+		(mapId: string) => packs.filter((p) => p.mapId === mapId),
+		[packs]
+	);
+
+	const getAggregateForMap = useCallback(
+		(mapId: string) => {
+			const items = listPacksForMap(mapId);
+			const total = items.reduce((a, p) => a + p.totalTiles, 0);
+			const downloaded = items.reduce((a, p) => a + p.downloadedTiles, 0);
+			const hasCompleted = items.some((p) => p.status === "completed");
+			const percent = total > 0 ? Math.min(100, Math.floor((downloaded / total) * 100)) : 0;
+			return { total, downloaded, percent, hasCompleted } as const;
+		},
+		[listPacksForMap]
+	);
+
+	function intersectBBox(a: BBox, b: BBox): BBox | null {
+		const west = Math.max(a[0], b[0]);
+		const south = Math.max(a[1], b[1]);
+		const east = Math.min(a[2], b[2]);
+		const north = Math.min(a[3], b[3]);
+		if (west >= east || south >= north) return null;
+		return [west, south, east, north];
+	}
+
+	const getCoverage = useCallback(
+		(mapId: string, bbox: BBox, zoomMin: number, zoomMax: number) => {
+			const items = listPacksForMap(mapId).filter((p) => p.status === "completed");
+			const totalTiles = countTiles(bbox, zoomMin, zoomMax);
+			let covered = 0;
+			for (const pack of items) {
+				const overlap = intersectBBox(bbox, pack.bbox as BBox);
+				if (!overlap) continue;
+				const zMin = Math.max(zoomMin, pack.zoomMin);
+				const zMax = Math.min(zoomMax, pack.zoomMax);
+				if (zMin > zMax) continue;
+				covered += countTiles(overlap, zMin, zMax);
+			}
+			// Clamp to total to roughly avoid double counting overlaps
+			covered = Math.min(covered, totalTiles);
+			const percent = totalTiles > 0 ? Math.floor((covered / totalTiles) * 100) : 0;
+			return { totalTiles, coveredTiles: covered, percent } as const;
+		},
+		[listPacksForMap]
+	);
+
+	const deletePack = useCallback(
+		async (packId: string) => {
+			await storeDeletePack(packId);
+			await reload();
+		},
+		[reload]
+	);
+
+	const deleteAllForMap = useCallback(
+		async (mapId: string) => {
+			// Remove tiles directory for the map (fast) and clear manifest entries
+			try {
+				await FileSystem.deleteAsync(mapTilesDir(mapId), { idempotent: true });
+			} catch {}
+			const m = await loadManifest();
+			m.packs = m.packs.filter((p) => p.mapId !== mapId);
+			await FileSystem.writeAsStringAsync(
+				`${
+					(FileSystem as any).documentDirectory ??
+					(FileSystem as any).cacheDirectory ??
+					"file:///data/user/0/app/files/"
+				}offline/manifest.json`,
+				JSON.stringify(m)
+			);
+			await reload();
+		},
+		[reload]
+	);
+
 	const api = useMemo(
-		() => ({ packs, isOnline, reload, startDownload, getLocalTemplate }),
-		[packs, isOnline, reload, startDownload, getLocalTemplate]
+		() => ({
+			packs,
+			isOnline,
+			reload,
+			startDownload,
+			getLocalTemplate,
+			listPacksForMap,
+			getAggregateForMap,
+			getCoverage,
+			deletePack,
+			deleteAllForMap,
+		}),
+		[
+			packs,
+			isOnline,
+			reload,
+			startDownload,
+			getLocalTemplate,
+			listPacksForMap,
+			getAggregateForMap,
+			getCoverage,
+			deletePack,
+			deleteAllForMap,
+		]
 	);
 	return api;
 }

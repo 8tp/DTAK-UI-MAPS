@@ -1,9 +1,11 @@
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 export type BBox = [number, number, number, number]; // [west, south, east, north]
 
 export function lonLatToTileXY(lon: number, lat: number, zoom: number): { x: number; y: number } {
-	const latRad = (lat * Math.PI) / 180;
+	// Clamp latitude to WebMercator valid range to avoid infinities
+	const clampedLat = Math.max(Math.min(lat, 85.05112878), -85.05112878);
+	const latRad = (clampedLat * Math.PI) / 180;
 	const n = 2 ** zoom;
 	const x = Math.floor(((lon + 180) / 360) * n);
 	const y = Math.floor(

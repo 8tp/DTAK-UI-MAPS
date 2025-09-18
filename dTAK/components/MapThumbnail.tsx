@@ -13,6 +13,9 @@ type MapThumbnailProps = {
 	name: string;
 	thumbnail: any; // Image source
 	selected?: boolean;
+	// New optional badge props
+	badgeText?: string;
+	badgeColor?: string;
 };
 
 export default function MapThumbnail({
@@ -20,11 +23,18 @@ export default function MapThumbnail({
 	name,
 	thumbnail,
 	selected = false,
+	badgeText,
+	badgeColor,
 }: MapThumbnailProps) {
 	return (
 		<TouchableOpacity onPress={onPress} style={styles.container}>
 			<View style={[styles.thumbnailContainer, selected && styles.selectedContainer]}>
 				<Image source={thumbnail} style={styles.thumbnail} resizeMode="cover" />
+				{badgeText ? (
+					<View style={[styles.badge, { backgroundColor: badgeColor ?? "#334155" }]}>
+						<Text style={styles.badgeText}>{badgeText}</Text>
+					</View>
+				) : null}
 				{selected && (
 					<View style={styles.checkmarkContainer}>
 						<View style={styles.checkmark}>
@@ -58,6 +68,19 @@ const styles = StyleSheet.create({
 	thumbnail: {
 		width: "100%",
 		height: "100%",
+	},
+	badge: {
+		position: "absolute",
+		left: 8,
+		top: 8,
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 6,
+	},
+	badgeText: {
+		color: "#fff",
+		fontSize: 12,
+		fontWeight: "600",
 	},
 	checkmarkContainer: {
 		position: "absolute",

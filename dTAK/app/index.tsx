@@ -18,7 +18,7 @@ import {
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
 import React, { useMemo, useRef, useState } from "react";
-import { GestureResponderEvent, StyleSheet, View } from "react-native";
+import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
@@ -27,6 +27,7 @@ import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useDrawSquare } from "../features/map/hooks/useDrawSquare";
 import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
 import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
+import type { BBox } from "../features/offline/tiles";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
 
 const BOTTOM_SHEET_BACKGROUND = "#26292B";
@@ -69,6 +70,7 @@ export default function App() {
 	const [accountMenuVisible, setAccountMenuVisible] = useState(false);
 	const [offlineMode, setOfflineMode] = useState<boolean>(false);
 	const [showOfflineManager, setShowOfflineManager] = useState<boolean>(false);
+	const [downloadBBox, setDownloadBBox] = useState<BBox | null>(null);
 	const mapRef = useRef<MapViewRef | null>(null);
 	const draw = useDrawCircle();
 	const drawSquare = useDrawSquare();
@@ -163,8 +165,53 @@ export default function App() {
 		"https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg?api_key=c177fb0b-10fa-4ba1-87ba-3a8446a7887d";
 	const localTemplate = offline.getLocalTemplate(selectedMap, "jpg");
 	const useLocal =
-		offlineMode &&
-		offline.packs.some((p) => p.mapId === selectedMap && p.status === "completed");
+		// Force local tiles when offline mode is enabled OR device is offline
+		offlineMode || !offline.isOnline
+			? true
+			: offline.packs.some((p) => p.mapId === selectedMap && p.status === "completed");
+
+	// Build maps list with badges from offline aggregates
+	const mapsForSection = [
+		{
+			id: "new-york",
+			name: "New York",
+			thumbnail: require("@assets/images/radial-pin.png"),
+		},
+		{ id: "chicago", name: "Chicago", thumbnail: require("@assets/images/radial-pin.png") },
+		{
+			id: "montgomery",
+			name: "Montgomery",
+			thumbnail: require("@assets/images/radial-pin.png"),
+		},
+	].map((m) => {
+		const agg = offline.getAggregateForMap?.(m.id);
+		let badgeText: string | undefined;
+		let badgeColor: string | undefined;
+		if (agg && agg.total > 0) {
+			badgeText = `${agg.percent}%`;
+			badgeColor = agg.hasCompleted ? "#16a34a" : "#334155";
+		}
+		return { ...m, selected: selectedMap === m.id, badgeText, badgeColor };
+	});
+
+	// Compute current camera bbox helper
+	const getCurrentBBox = async (): Promise<[number, number, number, number] | null> => {
+		try {
+			if (!mapRef.current) return null;
+			const visible = await (mapRef.current as any).getVisibleBounds?.();
+			// MapLibre getVisibleBounds returns [[west, south], [east, north]]
+			if (Array.isArray(visible) && visible.length === 2) {
+				const west = visible[0][0];
+				const south = visible[0][1];
+				const east = visible[1][0];
+				const north = visible[1][1];
+				return [west, south, east, north];
+			}
+			return null;
+		} catch {
+			return null;
+		}
+	};
 
 	return (
 		<View style={styles.page}>
@@ -180,6 +227,7 @@ export default function App() {
 				/>
 				<RasterSource
 					id="satelliteSource"
+					key={`sat-src-${selectedMap}-${useLocal ? "local" : "remote"}`}
 					tileUrlTemplates={[useLocal ? localTemplate : remoteTemplate]}
 					tileSize={256}>
 					<RasterLayer
@@ -267,7 +315,7 @@ export default function App() {
 							alignItems: "center",
 							marginBottom: 12,
 						}}>
-						<TouchableOpacity
+						<Pressable
 							onPress={() => setOfflineMode((v) => !v)}
 							style={{
 								backgroundColor: offlineMode ? "#16a34a" : "#334155",
@@ -278,9 +326,13 @@ export default function App() {
 							<Text style={{ color: "#fff" }}>
 								{offlineMode ? "Offline mode: ON" : "Offline mode: OFF"}
 							</Text>
-						</TouchableOpacity>
-						<TouchableOpacity
-							onPress={() => setShowOfflineManager(true)}
+						</Pressable>
+						<Pressable
+							onPress={async () => {
+								const bbox = await getCurrentBBox();
+								if (bbox) setDownloadBBox(bbox);
+								setShowOfflineManager(true);
+							}}
 							style={{
 								backgroundColor: "#3b82f6",
 								paddingVertical: 8,
@@ -288,31 +340,12 @@ export default function App() {
 								borderRadius: 8,
 							}}>
 							<Text style={{ color: "#fff" }}>Download current view</Text>
-						</TouchableOpacity>
+						</Pressable>
 					</View>
 					<MapsSection
 						onMapSelect={handleMapSelect}
 						onViewMore={handleViewMoreMaps}
-						maps={[
-							{
-								id: "new-york",
-								name: "New York",
-								thumbnail: require("@assets/images/radial-pin.png"), // Placeholder
-								selected: selectedMap === "new-york",
-							},
-							{
-								id: "chicago",
-								name: "Chicago",
-								thumbnail: require("@assets/images/radial-pin.png"), // Placeholder
-								selected: selectedMap === "chicago",
-							},
-							{
-								id: "montgomery",
-								name: "Montgomery",
-								thumbnail: require("@assets/images/radial-pin.png"), // Placeholder
-								selected: selectedMap === "montgomery",
-							},
-						]}
+						maps={mapsForSection}
 					/>
 					<PluginsSection
 						onPluginPress={handlePluginPress}
@@ -322,16 +355,36 @@ export default function App() {
 						<View style={{ marginTop: 12 }}>
 							<OfflineManagerSheet
 								mapId={selectedMap}
-								currentBBox={[-125, 24, -66.9, 49]}
+								currentBBox={
+									downloadBBox ??
+									((mapConfigurations[
+										selectedMap as keyof typeof mapConfigurations
+									].centerCoordinate
+										? [
+												mapConfigurations[
+													selectedMap as keyof typeof mapConfigurations
+												].centerCoordinate[0] - 0.05,
+												mapConfigurations[
+													selectedMap as keyof typeof mapConfigurations
+												].centerCoordinate[1] - 0.05,
+												mapConfigurations[
+													selectedMap as keyof typeof mapConfigurations
+												].centerCoordinate[0] + 0.05,
+												mapConfigurations[
+													selectedMap as keyof typeof mapConfigurations
+												].centerCoordinate[1] + 0.05,
+										  ]
+										: [-86.35, 32.3, -86.25, 32.4]) as BBox)
+								}
 								remoteTemplate={remoteTemplate}
 								defaultZoomMin={8}
 								defaultZoomMax={14}
 							/>
-							<TouchableOpacity
+							<Pressable
 								onPress={() => setShowOfflineManager(false)}
 								style={{ marginTop: 8, alignItems: "center" }}>
 								<Text style={{ color: "#94a3b8" }}>Close</Text>
-							</TouchableOpacity>
+							</Pressable>
 						</View>
 					)}
 				</BottomSheetView>
