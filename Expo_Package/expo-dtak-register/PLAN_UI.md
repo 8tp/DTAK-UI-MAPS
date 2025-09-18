@@ -22,6 +22,7 @@
 - Simplified the creating experience to a full-screen face-scan interstitial so users focus on the identity verification motif while setup completes.
 - Wired `LocationPromptScreen` to `expo-location`, including async permission handling, retry messaging, and persistence of the returned coordinates for later screens.
 - Strengthened password requirements to 15+ characters with mixed case, numeric, and symbolic characters, with inline warning copy when the password falls short.
+- Elevated the runtime baseline to Expo SDK 54.0.5 and refreshed allied dependencies (`expo-status-bar`, `expo-location`, `react-native`, `jest-expo`) accordingly.
 
 **What I Implemented**
 - Single portable RN app with a state-driven flow (no external nav dependencies) in `MVP - Onboarding, Map/RN_App.jsx`:
