@@ -17,13 +17,15 @@ import {
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
 import React, { useRef, useState } from "react";
-import { GestureResponderEvent, StyleSheet, View } from "react-native";
+import { GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 import { RadialMenu } from "../features/map/components/RadialMenu";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
+import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
+import { useOfflineMaps } from "../features/offline/useOfflineMaps";
 
 const CustomBackground = ({ style }: BottomSheetBackgroundProps) => (
 	<View style={[style, { backgroundColor: "#26292B", borderRadius: 16 }]} />
@@ -59,9 +61,12 @@ export default function App() {
 	const [anchor, setAnchor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [coordinate, setCoordinate] = useState<[number, number] | undefined>(undefined);
 	const [selectedMap, setSelectedMap] = useState<string>("new-york");
+	const [offlineMode, setOfflineMode] = useState<boolean>(false);
+	const [showOfflineManager, setShowOfflineManager] = useState<boolean>(false);
 	const mapRef = useRef<MapViewRef | null>(null);
 	const draw = useDrawCircle();
 	const { select } = useFeatureDeletion();
+	const offline = useOfflineMaps();
 
 	const sheetRef = useRef<BottomSheet>(null);
 
@@ -127,6 +132,14 @@ export default function App() {
 		setVisible(true);
 	};
 
+	// decide tile template
+	const remoteTemplate =
+		"https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg?api_key=c177fb0b-10fa-4ba1-87ba-3a8446a7887d";
+	const localTemplate = offline.getLocalTemplate(selectedMap, "jpg");
+	const useLocal =
+		offlineMode &&
+		offline.packs.some((p) => p.mapId === selectedMap && p.status === "completed");
+
 	return (
 		<View style={styles.page}>
 			<MapView ref={mapRef as any} style={styles.map} onLongPress={onMapLongPress}>
@@ -141,9 +154,7 @@ export default function App() {
 				/>
 				<RasterSource
 					id="satelliteSource"
-					tileUrlTemplates={[
-						"https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg?api_key=c177fb0b-10fa-4ba1-87ba-3a8446a7887d",
-					]}
+					tileUrlTemplates={[useLocal ? localTemplate : remoteTemplate]}
 					tileSize={256}>
 					<RasterLayer
 						id="satelliteLayer"
@@ -195,6 +206,36 @@ export default function App() {
 				enablePanDownToClose
 				style={styles.bottomSheet}>
 				<BottomSheetView style={styles.contentContainer}>
+					<View
+						style={{
+							flexDirection: "row",
+							justifyContent: "space-between",
+							alignItems: "center",
+							marginBottom: 12,
+						}}>
+						<TouchableOpacity
+							onPress={() => setOfflineMode((v) => !v)}
+							style={{
+								backgroundColor: offlineMode ? "#16a34a" : "#334155",
+								paddingVertical: 8,
+								paddingHorizontal: 12,
+								borderRadius: 8,
+							}}>
+							<Text style={{ color: "#fff" }}>
+								{offlineMode ? "Offline mode: ON" : "Offline mode: OFF"}
+							</Text>
+						</TouchableOpacity>
+						<TouchableOpacity
+							onPress={() => setShowOfflineManager(true)}
+							style={{
+								backgroundColor: "#3b82f6",
+								paddingVertical: 8,
+								paddingHorizontal: 12,
+								borderRadius: 8,
+							}}>
+							<Text style={{ color: "#fff" }}>Download current view</Text>
+						</TouchableOpacity>
+					</View>
 					<MapsSection
 						onMapSelect={handleMapSelect}
 						onViewMore={handleViewMoreMaps}
@@ -223,6 +264,22 @@ export default function App() {
 						onPluginPress={handlePluginPress}
 						onViewMore={handleViewMorePlugins}
 					/>
+					{showOfflineManager && (
+						<View style={{ marginTop: 12 }}>
+							<OfflineManagerSheet
+								mapId={selectedMap}
+								currentBBox={[-125, 24, -66.9, 49]}
+								remoteTemplate={remoteTemplate}
+								defaultZoomMin={8}
+								defaultZoomMax={14}
+							/>
+							<TouchableOpacity
+								onPress={() => setShowOfflineManager(false)}
+								style={{ marginTop: 8, alignItems: "center" }}>
+								<Text style={{ color: "#94a3b8" }}>Close</Text>
+							</TouchableOpacity>
+						</View>
+					)}
 				</BottomSheetView>
 			</BottomSheet>
 
