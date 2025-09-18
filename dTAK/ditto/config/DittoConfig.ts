@@ -3,7 +3,8 @@ import { Platform } from 'react-native';
 
 // Development configuration
 const DEVELOPMENT_CONFIG: DittoConfig = {
-  appId: process.env.EXPO_PUBLIC_DITTO_APP_ID || 'dtak-mesh-network',
+  // Ditto requires a valid UUID for the appId. Provide a valid default for local development
+  appId: process.env.EXPO_PUBLIC_DITTO_APP_ID || '11111111-1111-1111-1111-111111111111',
   playgroundToken: process.env.EXPO_PUBLIC_DITTO_PLAYGROUND_TOKEN || undefined,
   enableBluetooth: true,
   enableWiFi: true,
@@ -13,7 +14,8 @@ const DEVELOPMENT_CONFIG: DittoConfig = {
 
 // Production configuration
 const PRODUCTION_CONFIG: DittoConfig = {
-  appId: process.env.EXPO_PUBLIC_DITTO_PROD_APP_ID || process.env.EXPO_PUBLIC_DITTO_APP_ID || 'dtak-mesh-network-prod',
+  // Use a valid UUID fallback to avoid initialization errors if env vars are missing in production builds
+  appId: process.env.EXPO_PUBLIC_DITTO_PROD_APP_ID || process.env.EXPO_PUBLIC_DITTO_APP_ID || '22222222-2222-2222-2222-222222222222',
   playgroundToken: undefined, // No playground token in production
   enableBluetooth: true,
   enableWiFi: true,

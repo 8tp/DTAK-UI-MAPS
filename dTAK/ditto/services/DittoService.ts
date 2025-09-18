@@ -16,6 +16,18 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
     this.initializeListeners();
   }
 
+  // Environment helper
+  private isReactNative(): boolean {
+    try {
+      // If Platform is available, we are in RN bundle
+      if (Platform && (Platform.OS === 'ios' || Platform.OS === 'android')) return true;
+      // Fallback to navigator.product
+      return typeof navigator !== 'undefined' && (navigator as any).product === 'ReactNative';
+    } catch {
+      return false;
+    }
+  }
+
   static getInstance(): DittoService {
     if (!DittoService.instance) {
       DittoService.instance = new DittoService();
@@ -102,68 +114,68 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
 
       console.log('Ditto persistenceDirectory chosen:', persistenceDirectory);
 
-      // Prefer the async factory when available: Ditto.open({ persistenceDirectory })
+      // Prefer Ditto constructor in React Native; Ditto.open() is not supported in RN
+      const isReactNative = this.isReactNative();
+      // Prefer the async factory when available only for non-RN environments
       try {
-        if (typeof (Ditto as any).open === 'function') {
+        if (!isReactNative && typeof (Ditto as any).open === 'function') {
           console.log('Using Ditto.open() with persistenceDirectory');
           this.ditto = await (Ditto as any).open({ persistenceDirectory });
         } else {
-          console.log('Ditto.open() not available, trying constructor(identity, persistenceDirectory)');
-          // Fallback to constructor that accepts (identity?, persistenceDirectory?)
+          console.log('Using Ditto constructor for this environment');
+          // In RN, the supported API is the constructor with identity only
           try {
-            this.ditto = new (Ditto as any)(identity, persistenceDirectory);
+            this.ditto = new (Ditto as any)(identity);
           } catch (ctorErr) {
-            console.warn('Ditto constructor with persistenceDirectory failed, falling back to no-arg constructor:', ctorErr);
-            this.ditto = new Ditto(identity);
+            console.warn('Ditto constructor failed, retrying with identity only:', ctorErr);
+            this.ditto = new (Ditto as any)(identity);
           }
         }
       } catch (openErr) {
-        console.warn('Ditto.open failed, falling back to constructor:', openErr);
+        console.warn('Primary Ditto init path failed, falling back to constructor:', openErr);
         try {
-          this.ditto = new Ditto(identity);
+          this.ditto = new (Ditto as any)(identity);
         } catch (ctorErr) {
           console.error('All Ditto initialization attempts failed:', ctorErr);
           throw ctorErr;
         }
       }
 
-      // If Ditto is created, verify the persistence directory actually used.
-      try {
-        if (this.ditto && typeof (this.ditto as any).absolutePersistenceDirectory === 'string') {
-          const actual = (this.ditto as any).absolutePersistenceDirectory as string;
-          console.log('Ditto actual absolutePersistenceDirectory:', actual);
+      // If Ditto is created, verify the persistence directory actually used (non-RN only)
+      if (!isReactNative) {
+        try {
+          if (this.ditto && typeof (this.ditto as any).absolutePersistenceDirectory === 'string') {
+            const actual = (this.ditto as any).absolutePersistenceDirectory as string;
+            console.log('Ditto actual absolutePersistenceDirectory:', actual);
 
-          // If the actual path does not include our intended persistenceDirectory,
-          // attempt to close and reopen with the explicit absolute path.
-          if (persistenceDirectory && !actual.includes(persistenceDirectory)) {
-            console.warn('Actual persistence directory differs from requested. Attempting to reopen with explicit directory');
-            try {
-              if (typeof (this.ditto as any).close === 'function') {
-                await (this.ditto as any).close();
-              } else if (typeof this.ditto.stopSync === 'function') {
-                await this.ditto.stopSync();
-              }
-
-              // Try to open with persistenceDirectory explicitly
-              if (typeof (Ditto as any).open === 'function') {
-                this.ditto = await (Ditto as any).open({ persistenceDirectory });
-              } else {
-                this.ditto = new (Ditto as any)(identity, persistenceDirectory);
-              }
-
-              console.log('Reopened Ditto, actual absolutePersistenceDirectory:', (this.ditto as any).absolutePersistenceDirectory);
-            } catch (reopenErr) {
-              console.error('Failed to reopen Ditto with explicit persistenceDirectory:', reopenErr);
-              // If we failed to reopen, ensure we don't continue using a closed Ditto instance.
-              // Clear the reference so subsequent code doesn't call APIs on a closed object.
+            // If the actual path does not include our intended persistenceDirectory,
+            // attempt to close and reopen with the explicit absolute path.
+            if (persistenceDirectory && !actual.includes(persistenceDirectory)) {
+              console.warn('Actual persistence directory differs from requested. Attempting to reopen with explicit directory');
               try {
-                this.ditto = null;
-              } catch {}
+                if (typeof (this.ditto as any).close === 'function') {
+                  await (this.ditto as any).close();
+                } else if (typeof this.ditto.stopSync === 'function') {
+                  await this.ditto.stopSync();
+                }
+
+                // Try to open with persistenceDirectory explicitly
+                if (typeof (Ditto as any).open === 'function') {
+                  this.ditto = await (Ditto as any).open({ persistenceDirectory });
+                } else {
+                  this.ditto = new (Ditto as any)(identity, persistenceDirectory);
+                }
+
+                console.log('Reopened Ditto, actual absolutePersistenceDirectory:', (this.ditto as any).absolutePersistenceDirectory);
+              } catch (reopenErr) {
+                console.error('Failed to reopen Ditto with explicit persistenceDirectory:', reopenErr);
+                try { this.ditto = null; } catch {}
+              }
             }
           }
+        } catch (chkErr) {
+          console.warn('Could not verify Ditto persistence directory:', chkErr);
         }
-      } catch (chkErr) {
-        console.warn('Could not verify Ditto persistence directory:', chkErr);
       }
 
       // If the Ditto object exists but is closed (for example: we closed it
@@ -172,20 +184,27 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
       // closed Ditto object which throws.
       try {
         if (!this.ditto) {
-          console.warn('Ditto instance missing after persistence-directory verification. Attempting fallback opens.');
-
-          // First try: call Ditto.open() with no arguments (uses default config)
-          try {
-            if (typeof (Ditto as any).open === 'function') {
+          console.warn('Ditto instance missing after verification. Attempting fallback initialization.');
+          if (!isReactNative && typeof (Ditto as any).open === 'function') {
+            // Non-RN: try open() fallbacks
+            try {
               console.log('Fallback: trying Ditto.open() with default config');
               this.ditto = await (Ditto as any).open();
               console.log('Fallback: Ditto.open() succeeded');
+            } catch (openDefaultErr) {
+              console.warn('Fallback Ditto.open() failed:', openDefaultErr);
             }
-          } catch (openDefaultErr) {
-            console.warn('Fallback Ditto.open() failed:', openDefaultErr);
+            if (!this.ditto) {
+              try {
+                console.log('Fallback: trying Ditto.open() with explicit persistenceDirectory as last resort');
+                this.ditto = await (Ditto as any).open({ persistenceDirectory });
+                console.log('Fallback: Ditto.open(persistenceDirectory) succeeded');
+              } catch (lastResortErr) {
+                console.warn('Last-resort Ditto.open(persistenceDirectory) failed:', lastResortErr);
+              }
+            }
           }
-
-          // Second try: try constructor with identity (no persistenceDirectory)
+          // RN or final fallback: constructor with identity
           if (!this.ditto) {
             try {
               console.log('Fallback: trying `new Ditto(identity)`');
@@ -196,30 +215,17 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
             }
           }
 
-          // Third try: try opening with explicit persistenceDirectory one more time
           if (!this.ditto) {
-            try {
-              console.log('Fallback: trying Ditto.open() with explicit persistenceDirectory as last resort');
-              if (typeof (Ditto as any).open === 'function') {
-                this.ditto = await (Ditto as any).open({ persistenceDirectory });
-                console.log('Fallback: Ditto.open(persistenceDirectory) succeeded');
-              }
-            } catch (lastResortErr) {
-              console.warn('Last-resort Ditto.open(persistenceDirectory) failed:', lastResortErr);
-            }
-          }
-
-          if (!this.ditto) {
-            throw new Error('Ditto instance missing after persistence-directory verification and fallback attempts');
+            throw new Error('Ditto instance missing after verification and fallback attempts');
           }
         }
 
         if ((this.ditto as any).isClosed) {
           console.warn('Ditto instance is closed after verify/reopen. Attempting to open a new instance.');
-          if (typeof (Ditto as any).open === 'function') {
+          if (!isReactNative && typeof (Ditto as any).open === 'function') {
             this.ditto = await (Ditto as any).open({ persistenceDirectory });
           } else {
-            this.ditto = new (Ditto as any)(identity, persistenceDirectory);
+            this.ditto = new (Ditto as any)(identity);
           }
           console.log('Successfully opened new Ditto instance after closed state.');
         }
@@ -263,10 +269,11 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
     // and `freeze()` (see Ditto.TransportConfig in the SDK bundle). Passing
     // a plain POJO caused `.copy` to be undefined which crashed during init.
     try {
-      // Prefer the SDK's exported TransportConfig constructor if available
+      // Detect RN to avoid TransportConfig constructor and rely on shape object
+      const isReactNative = this.isReactNative();
       let tc: any = null;
 
-      if (typeof (TransportConfig as any) === 'function') {
+      if (!isReactNative && typeof (TransportConfig as any) === 'function') {
         tc = new (TransportConfig as any)();
         // set fields explicitly
         tc.peerToPeer.bluetoothLE.isEnabled = !!this.config.enableBluetooth;
@@ -275,13 +282,10 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
           tc.peerToPeer.awdl.isEnabled = !!this.config.enableAWDL;
         }
         if (this.config.websocketURL) {
-          // SDK uses `websocketURLs` (plural)
           tc.connect.websocketURLs = [this.config.websocketURL];
         }
       } else {
-        // As a last resort build a shape that matches the serializable
-        // form and let the SDK try to accept it (but avoid calling setTransportConfig
-        // with completely plain objects unless necessary).
+        // RN-safe POJO config
         tc = {
           peerToPeer: {
             bluetoothLE: { isEnabled: !!this.config.enableBluetooth },
@@ -295,15 +299,16 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
         };
       }
 
-      // Use Ditto API to set transport config. The SDK expects a TransportConfig
-      // instance and will call `.copy()` internally, so make sure we're passing
-      // an object created by the SDK when possible.
-      this.ditto.setTransportConfig(tc as TransportConfig);
-      console.log('Ditto transport configuration set (TransportConfig):', tc);
+      try {
+        this.ditto.setTransportConfig(tc as TransportConfig);
+        console.log('Ditto transport configuration set (TransportConfig):', tc);
+      } catch (innerErr) {
+        // In RN, setTransportConfig may be strict about instance types. Do not crash app.
+        console.warn('setTransportConfig failed; continuing with defaults. Error:', innerErr);
+      }
     } catch (err) {
-      console.error('Failed to set Ditto transport config using SDK TransportConfig:', err);
-      // Re-throw so callers can react (initialize() will catch and emit)
-      throw err;
+      console.error('Failed to prepare Ditto transport config:', err);
+      // Do not rethrow in RN to avoid crashing initialization
     }
   }
 
@@ -433,17 +438,57 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
   }
 
   async upsertDocument(collectionName: string, document: any, id: string): Promise<void> {
+  const isRN = this.isReactNative();
+  if (isRN) {
+    const dittoAny: any = this.ditto as any;
+    const storeAny: any = dittoAny?.store;
+    if (!storeAny || typeof storeAny.execute !== 'function') {
+      throw new Error('Ditto.store.execute() unavailable in RN');
+    }
+    try {
+      // Remove any existing row with same user-defined id
+      await storeAny.execute(`DELETE FROM ${collectionName} WHERE id = :id`, { id });
+    } catch {
+      // ignore
+    }
+    await storeAny.execute(`INSERT INTO ${collectionName} VALUES (:doc)`, { doc: document });
+    return;
+  }
   const collection: any = await this.createCollection(collectionName);
   await collection.upsert(document, id);
   }
 
   async findDocument(collectionName: string, id: string): Promise<any> {
+    const isRN = this.isReactNative();
+    if (isRN) {
+      const dittoAny: any = this.ditto as any;
+      const storeAny: any = dittoAny?.store;
+      if (!storeAny || typeof storeAny.execute !== 'function') {
+        throw new Error('Ditto.store.execute() unavailable in RN');
+      }
+      const result = await storeAny.execute(`SELECT * FROM ${collectionName} WHERE id = :id LIMIT 1`, { id });
+      const items = Array.isArray(result?.items) ? result.items : [];
+      const first = items[0];
+      const value = first && typeof first === 'object' && 'value' in first ? (first as any).value : first;
+      return value ?? null;
+    }
     const collection = await this.createCollection(collectionName);
     const doc = await collection.findByID(id).exec();
     return doc?.value || null;
   }
 
   async findAllDocuments(collectionName: string): Promise<any[]> {
+    const isRN = this.isReactNative();
+    if (isRN) {
+      const dittoAny: any = this.ditto as any;
+      const storeAny: any = dittoAny?.store;
+      if (!storeAny || typeof storeAny.execute !== 'function') {
+        throw new Error('Ditto.store.execute() unavailable in RN');
+      }
+      const res = await storeAny.execute(`SELECT * FROM ${collectionName}`);
+      const arr = Array.isArray(res?.items) ? res.items : [];
+      return arr.map((d: any) => (d && typeof d === 'object' && 'value' in d ? d.value : d));
+    }
     const collection = await this.createCollection(collectionName);
     const docs = await collection.findAll().exec();
     return docs.map(doc => doc.value);
@@ -453,15 +498,117 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
     collectionName: string, 
     callback: (docs: any[], event: any) => void
   ): Promise<any> {
+  const isReactNative = this.isReactNative();
+  try { console.log(`[DittoService] subscribeToCollection(${collectionName}) isRN=${isReactNative}`); } catch {}
+  if (isReactNative) {
+    // React Native: prefer DQL observers
+    const query = `SELECT * FROM ${collectionName}`;
+    const dittoAny: any = this.ditto as any;
+    const storeAny: any = dittoAny?.store;
+    const regFn = storeAny?.registerObserver || dittoAny?.registerObserver;
+    if (typeof regFn === 'function') {
+      const handler = (payload: any) => {
+        try {
+          const arr = Array.isArray(payload) ? payload : (Array.isArray(payload?.items) ? payload.items : []);
+          const normalized = arr.map((d: any) => (d && typeof d === 'object' && 'value' in d ? d.value : d));
+          callback(normalized, undefined);
+        } catch (err) {
+          console.error('Observer callback error:', err);
+        }
+      };
+      try {
+        try { console.log('[DittoService] RN subscribeToCollection: using registerObserver'); } catch {}
+        const ret = regFn.call(storeAny ?? dittoAny, query, handler);
+        if (typeof ret === 'function') {
+          return { cancel: ret, on: () => {} };
+        }
+        const cancel = () => {
+          try {
+            if (ret?.cancel) ret.cancel();
+            else if (ret?.stop) ret.stop();
+            else if (ret?.close) ret.close();
+          } catch (e) {
+            console.warn('Failed to cancel Ditto observer:', e);
+          }
+        };
+        return { cancel, on: () => {} };
+      } catch (e1) {
+        // Try (query, options, callback) signature
+        try {
+          try { console.log('[DittoService] RN subscribeToCollection: using registerObserver(query, {}, handler)'); } catch {}
+          const ret = regFn.call(storeAny ?? dittoAny, query, {}, handler);
+          if (typeof ret === 'function') {
+            return { cancel: ret, on: () => {} };
+          }
+          const cancel = () => {
+            try {
+              if (ret?.cancel) ret.cancel();
+              else if (ret?.stop) ret.stop();
+              else if (ret?.close) ret.close();
+            } catch (e) {
+              console.warn('Failed to cancel Ditto observer:', e);
+            }
+          };
+          return { cancel, on: () => {} };
+        } catch (e2) {
+          console.error('registerObserver failed with both signatures:', e1, e2);
+          // Fall through to polling strategies below (avoid legacy subscribe in RN)
+        }
+      }
+    }
+    // RN fallback: polling with DQL execute()
+    try {
+      const exec = storeAny?.execute || dittoAny?.execute || (dittoAny?.store && dittoAny.store.execute);
+      try { console.log('[DittoService] RN subscribeToCollection: execute() available =', typeof exec === 'function'); } catch {}
+      if (typeof exec === 'function') {
+        const intervalMs = 2000;
+        let cancelled = false;
+        const poll = async () => {
+          if (cancelled) return;
+          try {
+            const res = await exec.call(storeAny ?? dittoAny, query);
+            const arr = Array.isArray(res) ? res : (Array.isArray(res?.items) ? res.items : []);
+            const normalized = arr.map((d: any) => (d && typeof d === 'object' && 'value' in d ? d.value : d));
+            callback(normalized, undefined);
+          } catch (e) {
+            console.warn('Ditto execute() polling error:', e);
+          } finally {
+            if (!cancelled) setTimeout(poll, intervalMs);
+          }
+        };
+        // kick off
+        setTimeout(poll, 0);
+        return { cancel: () => { cancelled = true; }, on: () => {} };
+      }
+    } catch (pollErr) {
+      console.warn('registerObserver unavailable and execute() polling failed:', pollErr);
+    }
+    // As a last resort on RN, return a no-op subscription to avoid using legacy Collection APIs
+    console.warn('[DittoService] RN subscribeToCollection: registerObserver and execute() unavailable; returning no-op subscription');
+    return { cancel: () => {}, on: () => {} };
+  }
+
+  // Non-RN (Node/web) or older SDKs: fallback to legacy subscribe API
   const collection: any = await this.createCollection(collectionName);
   const subscription: any = (collection.findAll() as any).subscribe();
-
-  // subscription shape differs across SDK versions; treat as any at runtime
-  subscription.on('update', callback);
+  subscription.on('update', (docs: any[], event: any) => {
+    const normalized = Array.isArray(docs) ? docs.map((d: any) => (d && typeof d === 'object' && 'value' in d ? d.value : d)) : [];
+    callback(normalized, event);
+  });
   return subscription;
   }
 
   async removeDocument(collectionName: string, id: string): Promise<void> {
+    const isRN = this.isReactNative();
+    if (isRN) {
+      const dittoAny: any = this.ditto as any;
+      const storeAny: any = dittoAny?.store;
+      if (!storeAny || typeof storeAny.execute !== 'function') {
+        throw new Error('Ditto.store.execute() unavailable in RN');
+      }
+      await storeAny.execute(`DELETE FROM ${collectionName} WHERE id = :id`, { id });
+      return;
+    }
     const collection = await this.createCollection(collectionName);
     await collection.findByID(id).remove();
   }

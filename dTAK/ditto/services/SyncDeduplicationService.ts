@@ -383,19 +383,13 @@ export class SyncDeduplicationService implements DittoEventEmitter<SyncDeduplica
   }
 
   private async updateSyncRecordSources(id: string, newSource: SyncSource): Promise<void> {
-    const store = await this.dittoService.getStore();
-    const collection = store.collection(this.syncRecordsCollection);
-    
-      await collection
-      .findByID(id)
-      .update((mutableDoc: any) => {
-        if (mutableDoc) {
-          const sourcesPath = mutableDoc.at('sources');
-          const currentSources = Array.isArray(sourcesPath.value) ? [...sourcesPath.value] : [];
-          currentSources.push(this.serializeSource(newSource));
-          sourcesPath.set(currentSources);
-        }
-      });
+    // Fetch existing record
+    const existing = await this.dittoService.findDocument(this.syncRecordsCollection, id);
+    if (!existing) return;
+    const currentSources = Array.isArray(existing.sources) ? [...existing.sources] : [];
+    currentSources.push(this.serializeSource(newSource));
+    const updated = { ...existing, sources: currentSources };
+    await this.dittoService.upsertDocument(this.syncRecordsCollection, updated, id);
   }
 
   private serializeSyncRecord(record: SyncRecord): any {

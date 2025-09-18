@@ -158,16 +158,10 @@ export class PeerDiscoveryService implements DittoEventEmitter<PeerDiscoveryEven
 
   private async updatePresence(): Promise<void> {
     try {
-      const store = await this.dittoService.getStore();
-      const collection = store.collection(this.presenceCollection);
-      
-      await collection
-        .findByID(this.localPeerId)
-        .update((mutableDoc: any) => {
-          if (mutableDoc) {
-            mutableDoc.at('lastUpdate').set(new Date().toISOString());
-          }
-        });
+      const existing = await this.dittoService.findDocument(this.presenceCollection, this.localPeerId);
+      if (!existing) return;
+      const updated = { ...existing, lastUpdate: new Date().toISOString() };
+      await this.dittoService.upsertDocument(this.presenceCollection, updated, this.localPeerId);
     } catch (error) {
       console.error('Failed to update presence:', error);
     }
@@ -277,21 +271,18 @@ export class PeerDiscoveryService implements DittoEventEmitter<PeerDiscoveryEven
     accuracy: number;
   }): Promise<void> {
     try {
-      const store = await this.dittoService.getStore();
-      const collection = store.collection(this.presenceCollection);
-      
-      await collection
-        .findByID(this.localPeerId)
-        .update((mutableDoc: any) => {
-          if (mutableDoc) {
-            mutableDoc.at('location').set({
-              latitude: location.latitude,
-              longitude: location.longitude,
-              accuracy: location.accuracy,
-              timestamp: new Date().toISOString(),
-            });
-          }
-        });
+      const existing = await this.dittoService.findDocument(this.presenceCollection, this.localPeerId);
+      if (!existing) return;
+      const updated = {
+        ...existing,
+        location: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          accuracy: location.accuracy,
+          timestamp: new Date().toISOString(),
+        },
+      };
+      await this.dittoService.upsertDocument(this.presenceCollection, updated, this.localPeerId);
     } catch (error) {
       console.error('Failed to update location:', error);
     }
@@ -299,17 +290,10 @@ export class PeerDiscoveryService implements DittoEventEmitter<PeerDiscoveryEven
 
   async updateStatus(status: 'available' | 'busy' | 'away'): Promise<void> {
     try {
-      const store = await this.dittoService.getStore();
-      const collection = store.collection(this.presenceCollection);
-      
-      await collection
-        .findByID(this.localPeerId)
-        .update((mutableDoc: any) => {
-          if (mutableDoc) {
-            mutableDoc.at('status').set(status);
-            mutableDoc.at('lastUpdate').set(new Date().toISOString());
-          }
-        });
+      const existing = await this.dittoService.findDocument(this.presenceCollection, this.localPeerId);
+      if (!existing) return;
+      const updated = { ...existing, status, lastUpdate: new Date().toISOString() };
+      await this.dittoService.upsertDocument(this.presenceCollection, updated, this.localPeerId);
     } catch (error) {
       console.error('Failed to update status:', error);
     }

@@ -295,43 +295,46 @@ export class MessagingService implements DittoEventEmitter<MessagingEvents> {
     acknowledgement: MessageAcknowledgement
   ): Promise<void> {
     try {
-      const store = await this.dittoService.getStore();
-      const collection = store.collection(this.messagesCollection);
-      
-      await collection
-        .findByID(messageId)
-        .update((mutableDoc: any) => {
-          if (mutableDoc) {
-            const acks = mutableDoc.at('acknowledgements');
-            const existingAckIndex = acks.value?.findIndex((ack: any) => 
-              ack.peerId === acknowledgement.peerId
-            );
+      // Fetch current message value
+      const existing = await this.dittoService.findDocument(this.messagesCollection, messageId);
+      if (!existing) {
+        console.warn('updateMessageAcknowledgement: message not found', { messageId });
+        return;
+      }
 
-            if (existingAckIndex !== undefined && existingAckIndex >= 0) {
-              acks.at(existingAckIndex).at('status').set(acknowledgement.status);
-              acks.at(existingAckIndex).at('timestamp').set(acknowledgement.timestamp.toISOString());
-            } else {
-              // Mutable document paths in Ditto don't provide a direct push on the path.
-              // Read the current array, append, then set the full array back.
-              const currentAcks = Array.isArray(acks.value) ? [...acks.value] : [];
-              currentAcks.push({
-                peerId: acknowledgement.peerId,
-                peerName: acknowledgement.peerName,
-                status: acknowledgement.status,
-                timestamp: acknowledgement.timestamp.toISOString(),
-              });
-              acks.set(currentAcks);
-            }
+      // Normalize to BaseMessage
+      const message = this.deserializeMessage(existing);
 
-            // Update delivery status based on acknowledgements
-            const allAcks = acks.value as MessageAcknowledgement[];
-            const connectedPeers = this.peerDiscoveryService.getConnectedPeers();
-            
-            if (allAcks.length >= connectedPeers.length) {
-              mutableDoc.at('deliveryStatus').set('delivered');
-            }
-          }
-        });
+      // Update acknowledgements array
+      const acks = Array.isArray(message.acknowledgements) ? [...message.acknowledgements] : [];
+      const idx = acks.findIndex((ack) => ack.peerId === acknowledgement.peerId);
+      const newAck = {
+        peerId: acknowledgement.peerId,
+        peerName: acknowledgement.peerName,
+        status: acknowledgement.status,
+        timestamp: new Date(acknowledgement.timestamp),
+      } as MessageAcknowledgement;
+      if (idx >= 0) {
+        acks[idx] = newAck;
+      } else {
+        acks.push(newAck);
+      }
+      message.acknowledgements = acks;
+
+      // Potentially update deliveryStatus based on connected peers
+      try {
+        const connectedPeers = this.peerDiscoveryService.getConnectedPeers();
+        if (acks.length >= connectedPeers.length && connectedPeers.length > 0) {
+          message.deliveryStatus = 'delivered';
+        }
+      } catch {}
+
+      // Persist the updated message
+      await this.dittoService.upsertDocument(
+        this.messagesCollection,
+        this.serializeMessage(message),
+        message.id
+      );
     } catch (error) {
       console.error('Failed to update message acknowledgement:', error);
     }
