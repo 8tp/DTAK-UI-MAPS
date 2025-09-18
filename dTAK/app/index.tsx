@@ -15,8 +15,10 @@ import {
 	RasterLayer,
 	RasterSource,
 	ShapeSource,
+	UserLocation,
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
@@ -34,7 +36,6 @@ import {
 	type MarkerCreationOverlayHandle,
 } from "../features/markers/components/MarkerCreationOverlay";
 import { MarkersOverlay } from "../features/markers/components/MarkersOverlay";
-import { useMarkers } from "../features/markers/state/MarkersProvider";
 import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
 import type { BBox } from "../features/offline/tiles";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
@@ -86,7 +87,6 @@ export default function App() {
 	const drawSquare = useDrawSquare();
 	const drawGrid = useDrawGrid();
 	const offline = useOfflineMaps();
-	const { state, dispatch } = useMarkers();
 	const markerCreationRef = useRef<MarkerCreationOverlayHandle | null>(null);
 	const [createCircleId, setCreateCircleId] = useState<string | undefined>(undefined);
 	const [viewCircleId, setViewCircleId] = useState<string | undefined>(undefined);
@@ -96,6 +96,14 @@ export default function App() {
 	const [viewGridId, setViewGridId] = useState<string | undefined>(undefined);
 
 	const sheetRef = useRef<BottomSheet>(null);
+
+	React.useEffect(() => {
+		(async () => {
+			try {
+				await Location.requestForegroundPermissionsAsync();
+			} catch {}
+		})();
+	}, []);
 
 	const handleCameraPress = () => {
 		router.push("/camera" as never);
@@ -152,9 +160,6 @@ export default function App() {
 	};
 
 	const onMapLongPress = (e: any) => {
-		// Reveal the bottom sheet when long pressing
-		sheetRef.current?.snapToIndex(1);
-
 		const coord = e?.geometry?.coordinates ?? e?.coordinates;
 		const pointArray =
 			e?.point ??
@@ -232,8 +237,7 @@ export default function App() {
 				ref={mapRef as any}
 				style={styles.map}
 				onLongPress={onMapLongPress}
-				{...({ styleURL: "https://demotiles.maplibre.org/style.json" } as any)}
-			>
+				{...({ styleURL: "https://demotiles.maplibre.org/style.json" } as any)}>
 				<Camera
 					zoomLevel={
 						mapConfigurations[selectedMap as keyof typeof mapConfigurations].zoomLevel
@@ -245,7 +249,6 @@ export default function App() {
 				/>
 				<RasterSource
 					id="satelliteSource"
-					key={`sat-src-${selectedMap}-${useLocal ? "local" : "remote"}`}
 					tileUrlTemplates={[useLocal ? localTemplate : remoteTemplate]}
 					tileSize={256}>
 					<RasterLayer
@@ -365,6 +368,7 @@ export default function App() {
                 <MarkersOverlay />
                 {/* Marker creation overlay with preview + modal (must be inside MapView) */}
                 <MarkerCreationOverlay ref={markerCreationRef} />
+								<UserLocation />
             </MapView>
 
             {/* Toolbar fixed at the top */}
