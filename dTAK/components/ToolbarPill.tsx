@@ -10,20 +10,33 @@ import {
 	View,
 	ViewStyle,
 } from "react-native";
+import type { ReactNode } from "react";
 
-type ToolbarPill = {
+type ToolbarPillProps = {
 	onPress?: (event: GestureResponderEvent) => void;
-	icon: ImageSourcePropType; // require(...) or { uri: ... }
+	icon?: ImageSourcePropType; // require(...) or { uri: ... }
+	iconComponent?: ReactNode;
 	text?: string;
 	style?: ViewStyle; // allow external overrides
 	textStyle?: TextStyle; // allow customizing text
+	accessibilityLabel?: string;
 };
 
-export default function ToolbarPill({ onPress, icon, text, style, textStyle }: ToolbarPill) {
+export default function ToolbarPill({ onPress, icon, iconComponent, text, style, textStyle, accessibilityLabel }: ToolbarPillProps) {
+	const iconNode = iconComponent ? (
+		<View style={styles.iconWrapper}>{iconComponent}</View>
+	) : icon ? (
+		<Image source={icon} style={styles.icon} resizeMode="contain" />
+	) : null;
+
 	return (
-		<TouchableOpacity onPress={onPress} style={[styles.button, style]}>
+		<TouchableOpacity
+			onPress={onPress}
+			style={[styles.button, style]}
+			accessibilityRole="button"
+			accessibilityLabel={accessibilityLabel}>
 			<View style={styles.content}>
-				<Image source={icon} style={styles.icon} resizeMode="contain" />
+				{iconNode}
 				{text ? <Text style={[styles.text, textStyle]}>{text}</Text> : null}
 			</View>
 		</TouchableOpacity>
@@ -52,6 +65,12 @@ const styles = StyleSheet.create({
 	icon: {
 		width: 28,
 		height: 28,
+	},
+	iconWrapper: {
+		width: 28,
+		height: 28,
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	text: {
 		color: "#FFFFFF", // default text color
