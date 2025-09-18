@@ -36,9 +36,12 @@ import {
 	type MarkerCreationOverlayHandle,
 } from "../features/markers/components/MarkerCreationOverlay";
 import { MarkersOverlay } from "../features/markers/components/MarkersOverlay";
+import { MarkerDetailsModal } from "../features/markers/components/MarkerDetailsModal";
+import { ICONS } from "../features/markers/constants/icons";
 import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
 import type { BBox } from "../features/offline/tiles";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
+import { useMarkers } from "../features/markers/state/MarkersProvider";
 
 const BOTTOM_SHEET_BACKGROUND = "#26292B";
 
@@ -87,6 +90,7 @@ export default function App() {
 	const drawSquare = useDrawSquare();
 	const drawGrid = useDrawGrid();
 	const offline = useOfflineMaps();
+	const { state: markersState, dispatch: markersDispatch } = useMarkers();
 	const markerCreationRef = useRef<MarkerCreationOverlayHandle | null>(null);
 	const [createCircleId, setCreateCircleId] = useState<string | undefined>(undefined);
 	const [viewCircleId, setViewCircleId] = useState<string | undefined>(undefined);
