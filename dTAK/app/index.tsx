@@ -1,3 +1,4 @@
+import AccountMenu from "@components/AccountMenu";
 import MapsSection from "@components/MapsSection";
 import PluginsSection from "@components/PluginsSection";
 import Toolbar from "@components/Toolbar";
@@ -16,17 +17,19 @@ import {
 	ShapeSource,
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { GestureResponderEvent, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 import { RadialMenu } from "../features/map/components/RadialMenu";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
 
+const BOTTOM_SHEET_BACKGROUND = "#26292B";
+
 const CustomBackground = ({ style }: BottomSheetBackgroundProps) => (
-	<View style={[style, { backgroundColor: "#26292B", borderRadius: 16 }]} />
+	<View style={[style, { backgroundColor: BOTTOM_SHEET_BACKGROUND, borderRadius: 16 }]} />
 );
 
 const CustomHandle = (_props: BottomSheetHandleProps) => (
@@ -55,15 +58,20 @@ const mapConfigurations = {
 };
 
 export default function App() {
+	const insets = useSafeAreaInsets();
 	const [visible, setVisible] = useState(false);
 	const [anchor, setAnchor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [coordinate, setCoordinate] = useState<[number, number] | undefined>(undefined);
 	const [selectedMap, setSelectedMap] = useState<string>("new-york");
+	const [accountMenuVisible, setAccountMenuVisible] = useState(false);
 	const mapRef = useRef<MapViewRef | null>(null);
 	const draw = useDrawCircle();
 	const { select } = useFeatureDeletion();
 
 	const sheetRef = useRef<BottomSheet>(null);
+	const snapPoints = useMemo(() => ["32%", "55%", "90%"], []);
+	const [bottomSheetIndex, setBottomSheetIndex] = useState(2);
+	const isBottomSheetExpanded = bottomSheetIndex > -1;
 
 	const handleSelect = (action: any) => {
 		setVisible(false);
@@ -182,19 +190,28 @@ export default function App() {
 
 			{/* Toolbar fixed at the top */}
 			<SafeAreaView style={styles.toolbarContainer}>
-				<Toolbar />
+				<Toolbar onAccountPress={() => setAccountMenuVisible((prev) => !prev)} />
 			</SafeAreaView>
 
 			{/* Bottom drawer always visible */}
 			<BottomSheet
 				ref={sheetRef}
-				index={2}
-				snapPoints={["25%", "50%", "90%"]}
+				index={bottomSheetIndex}
+				snapPoints={snapPoints}
 				backgroundComponent={CustomBackground}
 				handleComponent={CustomHandle}
 				enablePanDownToClose
+				bottomInset={insets.bottom}
+				onChange={(index) => setBottomSheetIndex(index ?? 0)}
 				style={styles.bottomSheet}>
-				<BottomSheetView style={styles.contentContainer}>
+				<BottomSheetView
+					style={[
+						styles.contentContainer,
+						{
+							paddingBottom: 24 + insets.bottom,
+							backgroundColor: BOTTOM_SHEET_BACKGROUND,
+						},
+					]}>
 					<MapsSection
 						onMapSelect={handleMapSelect}
 						onViewMore={handleViewMoreMaps}
@@ -225,6 +242,16 @@ export default function App() {
 					/>
 				</BottomSheetView>
 			</BottomSheet>
+			<View
+				pointerEvents="none"
+				style={[
+					styles.bottomInsetOverlay,
+					{
+						height: insets.bottom,
+						backgroundColor: isBottomSheetExpanded ? BOTTOM_SHEET_BACKGROUND : "transparent",
+					},
+				]}
+			/>
 
 			{/* Delete overlay */}
 			<DeleteOverlay />
@@ -235,6 +262,11 @@ export default function App() {
 				anchor={anchor}
 				onSelect={handleSelect}
 				onRequestClose={() => setVisible(false)}
+			/>
+
+			<AccountMenu
+				visible={accountMenuVisible}
+				onClose={() => setAccountMenuVisible(false)}
 			/>
 
 			{/* Gesture overlay for draw circle mode */}
@@ -278,6 +310,12 @@ const styles = StyleSheet.create({
 	},
 	// BottomSheet always docked at bottom
 	bottomSheet: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		bottom: 0,
+	},
+	bottomInsetOverlay: {
 		position: "absolute",
 		left: 0,
 		right: 0,

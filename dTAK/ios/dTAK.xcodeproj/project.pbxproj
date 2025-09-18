@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		398913CA2E7B87F700240159 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A1C36A6DF8F87F357E83846A /* MapLibre */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		9B3D054102C8EBD8E4B2377C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 93016E12DD2F04A63F74661F /* PrivacyInfo.xcprivacy */; };
 		B82A7D3E0B97763800832FFB /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2F62970D88EE87C5C6936F4 /* ExpoModulesProvider.swift */; };
@@ -22,7 +23,7 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = dTAK/Info.plist; sourceTree = "<group>"; };
 		618F086FCC95EEB2B7A9CDB5 /* Pods-dTAK.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-dTAK.release.xcconfig"; path = "Target Support Files/Pods-dTAK/Pods-dTAK.release.xcconfig"; sourceTree = "<group>"; };
 		8459BD1B884D20753C587BFD /* libPods-dTAK.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-dTAK.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		93016E12DD2F04A63F74661F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = dTAK/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		93016E12DD2F04A63F74661F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = dTAK/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = dTAK/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BA7C45110D173EF73604B0A5 /* Pods-dTAK.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-dTAK.debug.xcconfig"; path = "Target Support Files/Pods-dTAK/Pods-dTAK.debug.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
@@ -37,6 +38,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				398913CA2E7B87F700240159 /* MapLibre in Frameworks */,
 				EFE34A8E43EE9939D8FA7F52 /* libPods-dTAK.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -120,7 +122,6 @@
 				BA7C45110D173EF73604B0A5 /* Pods-dTAK.debug.xcconfig */,
 				618F086FCC95EEB2B7A9CDB5 /* Pods-dTAK.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -361,7 +362,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = dTAK/dTAK.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZCCF539CTJ;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -382,6 +386,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.dTAK;
 				PRODUCT_NAME = dTAK;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "dTAK/dTAK-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -397,7 +402,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = dTAK/dTAK.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZCCF539CTJ;
 				INFOPLIST_FILE = dTAK/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -413,6 +421,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.dTAK;
 				PRODUCT_NAME = dTAK;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "dTAK/dTAK-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

@@ -4,12 +4,17 @@ import { GestureResponderEvent, Image, ImageSourcePropType, TouchableOpacity } f
 type TransparentButtonProps = {
 	onPress?: (event: GestureResponderEvent) => void;
 	asset: ImageSourcePropType;
+	accessibilityLabel?: string;
+	testID?: string;
 };
 
-export default function TransparentButton({ onPress, asset }: TransparentButtonProps) {
+export default function TransparentButton({ onPress, asset, accessibilityLabel, testID }: TransparentButtonProps) {
 	return (
 		<TouchableOpacity
 			onPress={onPress}
+			accessibilityRole="button"
+			accessibilityLabel={accessibilityLabel}
+			testID={testID}
 			style={{
 				backgroundColor: "transparent", // button stays transparent
 				padding: 10,
