@@ -148,6 +148,7 @@
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
 				5974FD4B10514912B8033F22 /* Remove signature files (Xcode workaround) */,
 				2F97B5DB0FF6DCA853C34171 /* [CP] Embed Pods Frameworks */,
+				3A56C82C8B6F49CAA2A99836 /* Remove signature files (Xcode workaround) */,
 			);
 			buildRules = (
 			);
@@ -270,6 +271,20 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-dTAK/Pods-dTAK-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		3A56C82C8B6F49CAA2A99836 /* Remove signature files (Xcode workaround) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Remove signature files (Xcode workaround)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
 		};
 		5974FD4B10514912B8033F22 /* Remove signature files (Xcode workaround) */ = {
 			isa = PBXShellScriptBuildPhase;

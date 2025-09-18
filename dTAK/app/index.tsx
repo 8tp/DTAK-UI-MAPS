@@ -2,6 +2,7 @@ import AccountMenu from "@components/AccountMenu";
 import MapsSection from "@components/MapsSection";
 import PluginsSection from "@components/PluginsSection";
 import Toolbar from "@components/Toolbar";
+import ChatInboxModal, { type ChatThread, type MinimalUser } from "@components/chat/ChatInboxModal";
 import BottomSheet, {
 	BottomSheetBackgroundProps,
 	BottomSheetHandleProps,
@@ -20,7 +21,7 @@ import {
 } from "@maplibre/maplibre-react-native";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
@@ -41,6 +42,7 @@ import { ICONS } from "../features/markers/constants/icons";
 import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
 import type { BBox } from "../features/offline/tiles";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
+import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { useMarkers } from "../features/markers/state/MarkersProvider";
 
 const BOTTOM_SHEET_BACKGROUND = "#26292B";
@@ -85,6 +87,7 @@ export default function App() {
 	const [offlineMode, setOfflineMode] = useState<boolean>(false);
 	const [showOfflineManager, setShowOfflineManager] = useState<boolean>(false);
 	const [downloadBBox, setDownloadBBox] = useState<BBox | null>(null);
+	const [isChatOpen, setIsChatOpen] = useState(false);
 	const mapRef = useRef<MapViewRef | null>(null);
 	const draw = useDrawCircle();
 	const drawSquare = useDrawSquare();
@@ -119,6 +122,99 @@ export default function App() {
 	const snapPoints = useMemo(() => ["32%", "55%", "90%"], []);
 	const [bottomSheetIndex, setBottomSheetIndex] = useState(2);
 	const isBottomSheetExpanded = bottomSheetIndex > -1;
+	const ackTimeouts = useRef<Record<string, Array<ReturnType<typeof setTimeout>>>>({});
+	const chatThreadsRef = useRef<ChatThread[]>([]);
+
+	const currentUser = useMemo<MinimalUser>(
+		() => ({
+			_id: "operator-1",
+			name: "Operator One",
+		}),
+		[],
+	);
+
+	const peerDirectory = useMemo(() => {
+		return {
+			alpha: {
+				_id: "operator-2",
+				name: "Alpha Team Lead",
+			} satisfies MinimalUser,
+			recon: {
+				_id: "operator-3",
+				name: "Recon Ops",
+			} satisfies MinimalUser,
+			intel: {
+				_id: "operator-4",
+				name: "Intel Analyst",
+			} satisfies MinimalUser,
+		};
+	}, []);
+
+	const initialThreads = useMemo<ChatThread[]>(() => {
+		const now = Date.now();
+		return [
+			{
+				id: "alpha-thread",
+				title: "Alpha Team",
+				peer: peerDirectory.alpha,
+				messages: [
+					{
+						_id: "alpha-msg-1",
+						text: "Need your overwatch on grid 47B in five.",
+						createdAt: new Date(now - 1000 * 60 * 3),
+						user: peerDirectory.alpha,
+					},
+					{
+						_id: "alpha-msg-0",
+						text: "Alpha team staged at LZ Bravo, awaiting go order.",
+						createdAt: new Date(now - 1000 * 60 * 12),
+						user: peerDirectory.alpha,
+					},
+				],
+			},
+			{
+				id: "recon-thread",
+				title: "Recon",
+				peer: peerDirectory.recon,
+				messages: [
+					{
+						_id: "recon-msg-1",
+						text: "Thermals show two vehicles near the ridge.",
+						createdAt: new Date(now - 1000 * 60 * 7),
+						user: peerDirectory.recon,
+					},
+				],
+			},
+			{
+				id: "intel-thread",
+				title: "Intel Desk",
+				peer: peerDirectory.intel,
+				messages: [
+					{
+						_id: "intel-msg-1",
+						text: "Latest sat pass uploaded to the mission files.",
+						createdAt: new Date(now - 1000 * 60 * 25),
+						user: peerDirectory.intel,
+					},
+				],
+			},
+		];
+	}, [peerDirectory]);
+
+	const [chatThreads, setChatThreads] = useState<ChatThread[]>(() => initialThreads);
+
+	useEffect(() => {
+		chatThreadsRef.current = chatThreads;
+	}, [chatThreads]);
+
+	useEffect(() => {
+		return () => {
+			Object.values(ackTimeouts.current).forEach((timeouts) => {
+				timeouts.forEach(clearTimeout);
+			});
+			ackTimeouts.current = {};
+		};
+	}, []);
 
 	const handleSelect = (action: any) => {
 		setVisible(false);
@@ -166,6 +262,60 @@ export default function App() {
 		// Placeholder for view more plugins functionality
 		console.log("View more plugins pressed");
 	};
+
+	const handleChatPress = useCallback(() => {
+		setIsChatOpen(true);
+	}, []);
+
+	const handleChatDismiss = useCallback(() => {
+		setIsChatOpen(false);
+	}, []);
+
+	const handleChatSend = useCallback((threadId: string, outgoingMessages: IMessage[] = []) => {
+		if (outgoingMessages.length === 0) {
+			return;
+		}
+
+		const targetThread = chatThreadsRef.current.find((thread) => thread.id === threadId);
+		if (!targetThread) {
+			return;
+		}
+
+		setChatThreads((previousThreads) =>
+			previousThreads.map((thread) =>
+				thread.id === threadId
+					? { ...thread, messages: GiftedChat.append(thread.messages, outgoingMessages) }
+					: thread,
+			),
+		);
+
+		const [firstMessage] = outgoingMessages;
+		if (!firstMessage) {
+			return;
+		}
+
+		const acknowledgement: IMessage = {
+			_id: `ack-${threadId}-${firstMessage._id}-${Date.now()}`,
+			text: firstMessage.text ? `Copy that: ${firstMessage.text}` : "Acknowledged.",
+			createdAt: new Date(Date.now() + 500),
+			user: targetThread.peer,
+		};
+
+		const timeout = setTimeout(() => {
+			setChatThreads((previousThreads) =>
+				previousThreads.map((thread) =>
+					thread.id === threadId
+						? { ...thread, messages: GiftedChat.append(thread.messages, [acknowledgement]) }
+						: thread,
+				),
+			);
+			ackTimeouts.current[threadId] = (ackTimeouts.current[threadId] ?? []).filter(
+				(item) => item !== timeout,
+			);
+		}, 650 + Math.random() * 600);
+
+		ackTimeouts.current[threadId] = [...(ackTimeouts.current[threadId] ?? []), timeout];
+	}, []);
 
 	const onMapLongPress = (e: any) => {
 		const coord = e?.geometry?.coordinates ?? e?.coordinates;
@@ -430,6 +580,7 @@ export default function App() {
             <SafeAreaView style={styles.toolbarContainer}>
 				<Toolbar
 					onAccountPress={() => setAccountMenuVisible((prev) => !prev)}
+					onChatPress={handleChatPress}
 					onCameraPress={handleCameraPress}
 				/>
 			</SafeAreaView>
@@ -684,6 +835,14 @@ export default function App() {
 			<AccountMenu
 				visible={accountMenuVisible}
 				onClose={() => setAccountMenuVisible(false)}
+			/>
+
+			<ChatInboxModal
+				visible={isChatOpen}
+				onDismiss={handleChatDismiss}
+				currentUser={currentUser}
+				threads={chatThreads}
+				onSend={handleChatSend}
 			/>
 
 			{/* Gesture overlay for draw circle mode */}
