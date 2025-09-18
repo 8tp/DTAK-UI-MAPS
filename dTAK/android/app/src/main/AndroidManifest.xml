@@ -33,6 +33,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="dtak"/>
+        <data android:scheme="exp+dtak"/>
       </intent-filter>
     </activity>
   </application>
