@@ -19,7 +19,7 @@ import {
 } from "@maplibre/maplibre-react-native";
 import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
-import { GestureResponderEvent, Pressable, Pressable, StyleSheet, Text, Text, View } from "react-native";
+import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
@@ -27,9 +27,12 @@ import { RadialMenu } from "../features/map/components/RadialMenu";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useDrawSquare } from "../features/map/hooks/useDrawSquare";
 import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
+import {
+	MarkerCreationOverlay,
+	type MarkerCreationOverlayHandle,
+} from "../features/markers/components/MarkerCreationOverlay";
 import { MarkersOverlay } from "../features/markers/components/MarkersOverlay";
 import { useMarkers } from "../features/markers/state/MarkersProvider";
-import { MarkerCreationOverlay, type MarkerCreationOverlayHandle } from "../features/markers/components/MarkerCreationOverlay";
 import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
 import type { BBox } from "../features/offline/tiles";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
@@ -106,7 +109,10 @@ export default function App() {
 			},
 			startMarker: () => {
 				if (mapRef.current && anchor) {
-					markerCreationRef.current?.startAtScreenPoint(mapRef.current, [anchor.x, anchor.y]);
+					markerCreationRef.current?.startAtScreenPoint(mapRef.current, [
+						anchor.x,
+						anchor.y,
+					]);
 				}
 			},
 		} as const;
@@ -305,7 +311,7 @@ export default function App() {
 						/>
 					</ShapeSource>
 				)}
-			{/* Markers overlay */}
+				{/* Markers overlay */}
 				<MarkersOverlay />
 				{/* Marker creation overlay with preview + modal (must be inside MapView) */}
 				<MarkerCreationOverlay ref={markerCreationRef} />
@@ -482,7 +488,6 @@ export default function App() {
 					}}
 				/>
 			)}
-
 		</View>
 	);
 }
