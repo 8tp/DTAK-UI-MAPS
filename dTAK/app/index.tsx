@@ -248,10 +248,26 @@ export default function App() {
 		// since we're using it in the MapView props
 	};
 
-	const handlePluginPress = (pluginId: string) => {
-		// Placeholder for plugin functionality
-		console.log(`Plugin ${pluginId} pressed`);
-	};
+	const handleChatPress = useCallback(() => {
+		setIsChatOpen(true);
+	}, []);
+
+	const handleChatDismiss = useCallback(() => {
+		setIsChatOpen(false);
+	}, []);
+
+	const handlePluginPress = useCallback(
+		(pluginId: string) => {
+			if (pluginId === "chat") {
+				handleChatPress();
+				return;
+			}
+
+			// Placeholder for plugin functionality
+			console.log(`Plugin ${pluginId} pressed`);
+		},
+		[handleChatPress],
+	);
 
 	const handleViewMoreMaps = () => {
 		// Placeholder for view more maps functionality
@@ -262,14 +278,6 @@ export default function App() {
 		// Placeholder for view more plugins functionality
 		console.log("View more plugins pressed");
 	};
-
-	const handleChatPress = useCallback(() => {
-		setIsChatOpen(true);
-	}, []);
-
-	const handleChatDismiss = useCallback(() => {
-		setIsChatOpen(false);
-	}, []);
 
 	const handleChatSend = useCallback((threadId: string, outgoingMessages: IMessage[] = []) => {
 		if (outgoingMessages.length === 0) {
