@@ -255,7 +255,6 @@ export default function App() {
 				/>
 				<RasterSource
 					id="satelliteSource"
-					key={`sat-src-${selectedMap}-${useLocal ? "local" : "remote"}`}
 					tileUrlTemplates={[useLocal ? localTemplate : remoteTemplate]}
 					tileSize={256}>
 					<RasterLayer
@@ -318,7 +317,7 @@ export default function App() {
 					</ShapeSource>
 				)}
 				{/* Markers overlay */}
-				<MarkersOverlay />
+				<MarkersOverlay key={`markers-${selectedMap}-${useLocal ? "local" : "remote"}`} />
 				{/* Marker creation overlay with preview + modal (must be inside MapView) */}
 				<MarkerCreationOverlay ref={markerCreationRef} />
 			</MapView>
