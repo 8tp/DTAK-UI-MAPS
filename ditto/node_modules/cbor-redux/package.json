@@ -1,0 +1,42 @@
+{
+  "module": "./esm/mod.js",
+  "main": "./script/mod.js",
+  "name": "cbor-redux",
+  "version": "1.0.0",
+  "description": "The Concise Binary Object Representation (CBOR) data format (RFC7049) implemented in pure JavaScript, revived.",
+  "keywords": [
+    "cbor"
+  ],
+  "homepage": "https://github.com/aaronhuggins/cbor-redux#readme",
+  "bugs": "https://github.com/aaronhuggins/cbor-redux/issues",
+  "license": "MIT",
+  "contributors": [
+    "Patrick Gansterer <paroga@paroga.com> (http://paroga.com/)",
+    "Aaron Huggins <ahuggins@aaronhuggins.com> (https://aaronhuggins.com/)",
+    "Glenn Engel <glenne@engel.org>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aaronhuggins/cbor-redux.git"
+  },
+  "exports": {
+    ".": {
+      "import": "./esm/mod.js",
+      "require": "./script/mod.js"
+    },
+    "./polyfill.js": {
+      "import": "./esm/polyfill.js",
+      "require": "./script/polyfill.js"
+    }
+  },
+  "scripts": {
+    "test": "node test_runner.js"
+  },
+  "dependencies": {
+    "@deno/shim-deno": "~0.16.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.9",
+    "picocolors": "^1.0.0"
+  }
+}

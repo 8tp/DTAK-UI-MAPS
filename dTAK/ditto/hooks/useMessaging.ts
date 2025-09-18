@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { MessagingService } from '../services/MessagingService';
 import { BaseMessage, ChatMessage, MessageAttachment } from '../types/DittoTypes';
 
@@ -147,11 +147,24 @@ export const useMessaging = () => {
     };
   }, [messagingService]);
 
-  const pendingMessages = messages.filter(m => m.deliveryStatus === 'pending');
-  const failedMessages = messages.filter(m => m.deliveryStatus === 'failed');
-  const unreadMessages = messages.filter(m => 
-    m.senderId !== messagingService['getCurrentPeerId']?.() && 
-    !m.acknowledgements.some(ack => ack.peerId === messagingService['getCurrentPeerId']?.() && ack.status === 'read')
+  const selfPeerId = messagingService.getSelfPeerId?.();
+
+  const pendingMessages = useMemo(
+    () => messages.filter(m => m.deliveryStatus === 'pending'),
+    [messages]
+  );
+
+  const failedMessages = useMemo(
+    () => messages.filter(m => m.deliveryStatus === 'failed'),
+    [messages]
+  );
+
+  const unreadMessages = useMemo(
+    () => messages.filter(m => 
+      (!!selfPeerId ? m.senderId !== selfPeerId : true) &&
+      !m.acknowledgements.some(ack => !!selfPeerId && ack.peerId === selfPeerId && ack.status === 'read')
+    ),
+    [messages, selfPeerId]
   );
 
   return {

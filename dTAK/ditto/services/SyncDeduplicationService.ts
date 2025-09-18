@@ -388,7 +388,7 @@ export class SyncDeduplicationService implements DittoEventEmitter<SyncDeduplica
     
       await collection
       .findByID(id)
-      .update((mutableDoc) => {
+      .update((mutableDoc: any) => {
         if (mutableDoc) {
           const sourcesPath = mutableDoc.at('sources');
           const currentSources = Array.isArray(sourcesPath.value) ? [...sourcesPath.value] : [];

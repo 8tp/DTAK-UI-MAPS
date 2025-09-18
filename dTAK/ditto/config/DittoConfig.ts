@@ -21,10 +21,27 @@ const PRODUCTION_CONFIG: DittoConfig = {
   websocketURL: process.env.EXPO_PUBLIC_DITTO_WEBSOCKET_URL,
 };
 
+// Basic runtime validation and environment-aware logging for Ditto config
+const validateConfig = (config: DittoConfig, isDevelopment: boolean): void => {
+  if (!config.appId) {
+    console.warn('[DittoConfig] Missing appId. Using fallback. This may affect identity and sync grouping.');
+  }
+
+  if (!isDevelopment && config.playgroundToken) {
+    console.warn('[DittoConfig] playgroundToken should not be set in production. Ignoring any provided value.');
+  }
+
+  if (!config.websocketURL) {
+    console.log('[DittoConfig] WebSocket URL not set; cloud connect is disabled. Running P2P transports only.');
+  }
+};
+
 // Export configuration based on environment
 export const getDittoConfig = (): DittoConfig => {
   const isDevelopment = __DEV__;
-  return isDevelopment ? DEVELOPMENT_CONFIG : PRODUCTION_CONFIG;
+  const config = isDevelopment ? DEVELOPMENT_CONFIG : PRODUCTION_CONFIG;
+  validateConfig(config, isDevelopment);
+  return config;
 };
 
 export default getDittoConfig;

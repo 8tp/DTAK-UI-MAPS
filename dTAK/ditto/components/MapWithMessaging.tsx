@@ -29,14 +29,25 @@ export const MapWithMessaging: React.FC<MapWithMessagingProps> = ({
   const { 
     peers, 
     connectedPeerCount, 
-    updateLocation 
+    updateLocation,
+    startDiscovery,
+    stopDiscovery
   } = usePeerDiscovery();
 
   const [showPeers, setShowPeers] = useState(false);
 
   useEffect(() => {
-    initializeMessaging();
-  }, [initializeMessaging]);
+    // Initialize messaging first (requires Ditto ready), then start discovery
+    // We chain these to reduce race conditions on Ditto initialization.
+    initializeMessaging()
+      .then(() => startDiscovery())
+      .catch((err) => {
+        console.warn('MapWithMessaging: initialization failed or Ditto not ready yet for discovery:', err);
+      });
+    return () => {
+      stopDiscovery();
+    };
+  }, [initializeMessaging, startDiscovery, stopDiscovery]);
 
   // Filter messages for map display
   const markerMessages = messages.filter(

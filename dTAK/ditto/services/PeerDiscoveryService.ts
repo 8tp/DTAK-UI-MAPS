@@ -12,7 +12,7 @@ export class PeerDiscoveryService implements DittoEventEmitter<PeerDiscoveryEven
   private dittoService: DittoService;
   private peers: Map<string, Peer> = new Map();
   private presenceCollection = 'peer_presence';
-  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private localPeerId: string;
   private localPeerName: string;
   private listeners: Map<keyof PeerDiscoveryEvents, Set<Function>> = new Map();
@@ -163,7 +163,7 @@ export class PeerDiscoveryService implements DittoEventEmitter<PeerDiscoveryEven
       
       await collection
         .findByID(this.localPeerId)
-        .update((mutableDoc) => {
+        .update((mutableDoc: any) => {
           if (mutableDoc) {
             mutableDoc.at('lastUpdate').set(new Date().toISOString());
           }
@@ -282,7 +282,7 @@ export class PeerDiscoveryService implements DittoEventEmitter<PeerDiscoveryEven
       
       await collection
         .findByID(this.localPeerId)
-        .update((mutableDoc) => {
+        .update((mutableDoc: any) => {
           if (mutableDoc) {
             mutableDoc.at('location').set({
               latitude: location.latitude,
@@ -304,7 +304,7 @@ export class PeerDiscoveryService implements DittoEventEmitter<PeerDiscoveryEven
       
       await collection
         .findByID(this.localPeerId)
-        .update((mutableDoc) => {
+        .update((mutableDoc: any) => {
           if (mutableDoc) {
             mutableDoc.at('status').set(status);
             mutableDoc.at('lastUpdate').set(new Date().toISOString());

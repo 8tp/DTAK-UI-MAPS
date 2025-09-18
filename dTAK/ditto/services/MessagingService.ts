@@ -300,7 +300,7 @@ export class MessagingService implements DittoEventEmitter<MessagingEvents> {
       
       await collection
         .findByID(messageId)
-        .update((mutableDoc) => {
+        .update((mutableDoc: any) => {
           if (mutableDoc) {
             const acks = mutableDoc.at('acknowledgements');
             const existingAckIndex = acks.value?.findIndex((ack: any) => 
@@ -479,6 +479,15 @@ export class MessagingService implements DittoEventEmitter<MessagingEvents> {
   }
 
   private getCurrentPeerName(): string {
+    return this.peerDiscoveryService.getLocalPeerName();
+  }
+
+  // Public accessors for consumers (e.g., hooks/components)
+  public getSelfPeerId(): string {
+    return this.peerDiscoveryService.getLocalPeerId();
+  }
+
+  public getSelfPeerName(): string {
     return this.peerDiscoveryService.getLocalPeerName();
   }
 
