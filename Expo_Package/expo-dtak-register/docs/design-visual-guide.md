@@ -26,7 +26,6 @@ This guide tracks the current design tokens and component styling patterns used 
 | Body (`S.subText`) | 14 | 400 | Supporting copy |
 | Field Label (`S.fieldLabel`) | 12 | Uppercase | Labels for inputs |
 | CTA Text (`S.ctaTxt`, `S.primaryBtnTxt`) | 16 | 700 | Buttons with high contrast |
-| Step Row (`S.stepRow`) | 13 | 400 | Progress steps in creating screen |
 
 All text leverages the default system font (SF Pro on iOS). We enforce uppercase + tracking in labels and CTA buttons directly in styles.
 
@@ -48,7 +47,9 @@ All text leverages the default system font (SF Pro on iOS). We enforce uppercase
 - **CTA / Ghost Button:** Primary and secondary button components with matching typography & padding.
 - **Input Field:** Label + `TextInput` with dark background and subtext placeholders.
 - **Header:** Back button + logo badge + step title.
-- **Screens:** `SignUpScreen`, `AddressCallsignScreen`, `SelfieScreen`, `CreatingScreen`, `LocationPromptScreen`, `FinalReady` share consistent spacing & reuse the components above.
+- **Screens:** `LoginScreen`, `SignUpScreen`, `AddressCallsignScreen`, `SelfieScreen`, `CreatingScreen`, `LocationPromptScreen`, `FinalReady` share consistent spacing & reuse the components above.
+- **LoginScreen:** Mirrors signup styling with only email/password fields, primary CTA (`Sign in`) and a secondary `GhostBtn` that routes into account creation.
+- **FaceScanLoader:** 220×220 looping image sequence built from `assets/Face Scan {1-4}.png`; the Creating step now renders this loader full-screen to reinforce identity verification during account creation.
 
 ## Plugin Preview Styling (MapPluginsScreen)
 

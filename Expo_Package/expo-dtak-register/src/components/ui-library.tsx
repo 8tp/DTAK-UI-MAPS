@@ -16,12 +16,12 @@ import {
  * Keep this list in sync with docs/design-visual-guide.md.
  */
 export const tokens = {
-  bg: "#0b0c10",
-  surface: "#12141a",
-  border: "#1f2430",
-  text: "#e6e7ee",
-  sub: "#9aa0a6",
-  primary: "#4f6bff",
+  bg: "#1F2021",
+  surface: "#26292B",
+  border: "#323639",
+  text: "#fff",
+  sub: "#D6D9DB",
+  primary: "#1879C7",
   accent: "#2aa3ff",
 } as const;
 
@@ -57,7 +57,11 @@ export type GhostButtonProps = {
 };
 
 export const GhostButton: React.FC<GhostButtonProps> = ({ title, onPress }) => (
-  <TouchableOpacity onPress={onPress} style={styles.ghost} accessibilityRole="button">
+  <TouchableOpacity
+    onPress={onPress}
+    style={styles.ghost}
+    accessibilityRole="button"
+  >
     <Text style={styles.ghostTxt}>{title}</Text>
   </TouchableOpacity>
 );

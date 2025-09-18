@@ -9,7 +9,6 @@ import React, {
   useState,
 } from "react";
 import {
-  ActivityIndicator,
   Image,
   SafeAreaView,
   ScrollView,
@@ -24,6 +23,7 @@ import {
 import MapPluginsScreen from "./MapPluginsScreen";
 
 type Step =
+  | "login"
   | "sign"
   | "address"
   | "selfie"
@@ -32,20 +32,29 @@ type Step =
   | "done"
   | "plugins";
 
+type NonPluginStep = Exclude<Step, "plugins">;
+
 type SetStep = Dispatch<SetStateAction<Step>>;
 
 const T = {
-  bg: "#0b0c10",
-  surface: "#12141a",
-  border: "#1f2430",
-  text: "#e6e7ee",
-  sub: "#9aa0a6",
-  primary: "#4f6bff",
+  bg: "#1F2021",
+  surface: "#26292B",
+  border: "#323639",
+  text: "#fff",
+  sub: "#D6D9DB",
+  primary: "#1879C7",
   primary2: "#2aa3ff",
-  cta: "#4f6bff",
+  cta: "#1879C7",
 } as const;
 
 const DTAK_LOGO = require("./assets/dtak-logo.png");
+
+const FACE_SCANS = [
+  require("./assets/Face Scan 1.png"),
+  require("./assets/Face Scan 2.png"),
+  require("./assets/Face Scan 3.png"),
+  require("./assets/Face Scan 4.png"),
+] as const;
 
 const DtakLogoBadge: React.FC = () => (
   <Image source={DTAK_LOGO} style={S.logo} resizeMode="contain" />
@@ -55,7 +64,9 @@ const isEmail = (value: string): boolean => /.+@.+\..+/.test(value);
 const strongEnough = (value: string): boolean => value.length >= 8;
 
 const App: React.FC = () => {
-  const [step, setStep] = useState<Step>("sign");
+  const [step, setStep] = useState<Step>("login");
+  const [pluginsReturnStep, setPluginsReturnStep] =
+    useState<NonPluginStep>("done");
 
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -89,7 +100,7 @@ const App: React.FC = () => {
   if (step === "plugins") {
     return (
       <SafeAreaView style={[S.safe, { backgroundColor: "#04070f" }]}>
-        <MapPluginsScreen onBack={() => setStep("done")} />
+        <MapPluginsScreen onBack={() => setStep(pluginsReturnStep)} />
       </SafeAreaView>
     );
   }
@@ -106,6 +117,19 @@ const App: React.FC = () => {
           }}
           style={{ flex: 1 }}
         >
+          {step === "login" && (
+            <LoginScreen
+              email={email}
+              setEmail={setEmail}
+              password={password}
+              setPassword={setPassword}
+              onSignIn={() => {
+                setPluginsReturnStep("login");
+                setStep("plugins");
+              }}
+              onCreateAccount={() => setStep("sign")}
+            />
+          )}
           {step === "sign" && (
             <SignUpScreen
               name={name}
@@ -138,7 +162,12 @@ const App: React.FC = () => {
             <LocationPromptScreen onGrant={() => setStep("done")} />
           )}
           {step === "done" && (
-            <FinalReady onPreviewPlugins={() => setStep("plugins")} />
+            <FinalReady
+              onPreviewPlugins={() => {
+                setPluginsReturnStep("done");
+                setStep("plugins");
+              }}
+            />
           )}
         </ScrollView>
       </View>
@@ -147,7 +176,9 @@ const App: React.FC = () => {
 };
 
 function goBack(step: Step, setStep: SetStep): void {
-  if (step === "address") {
+  if (step === "sign") {
+    setStep("login");
+  } else if (step === "address") {
     setStep("sign");
   } else if (step === "selfie") {
     setStep("address");
@@ -164,7 +195,8 @@ type HeaderProps = {
 };
 
 const Header: React.FC<HeaderProps> = ({ step, onBack }) => {
-  const titleMap: Record<Exclude<Step, "plugins">, string> = {
+  const titleMap: Record<NonPluginStep, string> = {
+    login: "Sign In",
     sign: "Create Account",
     address: "Home & Callsign",
     selfie: "Verify Identity",
@@ -179,10 +211,12 @@ const Header: React.FC<HeaderProps> = ({ step, onBack }) => {
     <View style={S.header}>
       <TouchableOpacity
         onPress={onBack}
-        disabled={step === "sign" || step === "done"}
+        disabled={step === "login" || step === "sign" || step === "done"}
         style={[
           S.backBtn,
-          (step === "sign" || step === "done") && { opacity: 0 },
+          (step === "login" || step === "sign" || step === "done") && {
+            opacity: 0,
+          },
         ]}
         accessibilityRole="button"
         accessibilityLabel="Go back"
@@ -267,6 +301,71 @@ const GhostBtn: React.FC<GhostBtnProps> = ({ title, onPress }) => (
     <Text style={S.ghostTxt}>{title}</Text>
   </TouchableOpacity>
 );
+
+const FaceScanLoader: React.FC = () => {
+  const [frameIndex, setFrameIndex] = useState<number>(0);
+
+  useEffect(() => {
+    const handle = setInterval(() => {
+      setFrameIndex((index) => (index + 1) % FACE_SCANS.length);
+    }, 180);
+
+    return () => clearInterval(handle);
+  }, []);
+
+  return (
+    <View style={S.faceScanContainer} testID="face-scan-loader">
+      <Image source={FACE_SCANS[frameIndex]} style={S.faceScanImage} />
+    </View>
+  );
+};
+
+type LoginScreenProps = {
+  email: string;
+  setEmail: Dispatch<SetStateAction<string>>;
+  password: string;
+  setPassword: Dispatch<SetStateAction<string>>;
+  onSignIn: () => void;
+  onCreateAccount: () => void;
+};
+
+const LoginScreen: React.FC<LoginScreenProps> = ({
+  email,
+  setEmail,
+  password,
+  setPassword,
+  onSignIn,
+  onCreateAccount,
+}) => {
+  const canSignIn = useMemo(
+    () => isEmail(email) && strongEnough(password),
+    [email, password]
+  );
+
+  return (
+    <Card>
+      <Text style={S.subheader}>Mission access</Text>
+      <Text style={S.sectionTitle}>Sign in to continue</Text>
+      <View style={{ marginTop: 16 }}>
+        <Field
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="you@unit.mil"
+        />
+        <Field
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          placeholder="••••••••"
+          secureTextEntry
+        />
+      </View>
+      <CTA title="Sign in" onPress={onSignIn} disabled={!canSignIn} />
+      <GhostBtn title="Create account" onPress={onCreateAccount} />
+    </Card>
+  );
+};
 
 type SignUpScreenProps = {
   name: string;
@@ -414,39 +513,11 @@ type CreatingScreenProps = {
   ticks: number;
 };
 
-const CreatingScreen: React.FC<CreatingScreenProps> = ({ ticks }) => {
-  const steps = [
-    "Initializing secure container",
-    "Encrypting profile keys",
-    "Verifying identity locally",
-    "Finalizing setup",
-  ];
-
-  const activeIndex = Math.min(ticks, steps.length - 1);
-
-  return (
-    <Card>
-      <View style={S.loaderIcon}>
-        <ActivityIndicator size="large" color={T.primary} />
-      </View>
-      <Text style={S.sectionTitle}>Creating your account…</Text>
-      <Text style={S.subText}>{steps[activeIndex]}</Text>
-      <View style={{ marginTop: 16 }}>
-        {steps.map((label, index) => (
-          <Text
-            key={label}
-            style={[
-              S.stepRow,
-              { color: index <= activeIndex ? "#9ec3ff" : T.sub },
-            ]}
-          >
-            • {label}
-          </Text>
-        ))}
-      </View>
-    </Card>
-  );
-};
+const CreatingScreen: React.FC<CreatingScreenProps> = ({ ticks: _unused }) => (
+  <View style={S.creatingFullScreen}>
+    <FaceScanLoader />
+  </View>
+);
 
 type LocationPromptScreenProps = {
   onGrant: () => void;
@@ -540,7 +611,7 @@ const S = StyleSheet.create({
     justifyContent: "center",
     marginTop: 14,
   },
-  ctaTxt: { color: "#0b0c10", fontWeight: "700", fontSize: 16 },
+  ctaTxt: { color: "#FFF", fontWeight: "700", fontSize: 16 },
   ghost: {
     borderColor: T.border,
     borderWidth: 1,
@@ -598,16 +669,22 @@ const S = StyleSheet.create({
     paddingVertical: 8,
   },
   cameraHintTxt: { color: T.text, textAlign: "center", fontSize: 13 },
-  loaderIcon: {
-    alignSelf: "center",
-    height: 64,
-    width: 64,
-    borderRadius: 32,
-    backgroundColor: "#0f1117",
+  creatingFullScreen: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  stepRow: { fontSize: 13, marginVertical: 3 },
+  faceScanContainer: {
+    alignSelf: "center",
+    height: 900,
+    width: 440,
+    marginBottom: 18,
+  },
+  faceScanImage: {
+    height: "100%",
+    width: "100%",
+    resizeMode: "contain",
+  },
   mapBadge: {
     alignSelf: "center",
     height: 56,

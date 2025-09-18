@@ -1,5 +1,21 @@
 # UI Changelog (Registration Screens)
 
+Date: 2025-09-19
+
+## Added
+- Inserted a dedicated `LoginScreen` ahead of the signup flow so returning users can authenticate with email/password before choosing to create a new account.
+
+## Updated
+- Extended the onboarding state machine in `App.tsx` with a `login` step plus dynamic plugin return routing so both the post-setup preview and direct sign-in return to the correct screen.
+- Adjusted `MapPluginsScreen` entry handling to respect the origin step when closing the preview.
+- Refreshed `__tests__/App.test.tsx` to cover the login prompt and maintain gating expectations for account creation inputs.
+- Swapped the creating-state loader to an animated face-scan sequence sourced from `assets/Face Scan {1-4}.png`, aligning the visual with the identity verification theme.
+- Increased the face-scan loader footprint to 220×220 so the identity animation reads clearly during account creation.
+- Reworked the Creating step to display only the face-scan animation as a full-screen interstitial, removing the previous progress text.
+
+## Notes
+- Login uses the existing typography, card, and CTA primitives to stay aligned with the onboarding visuals.
+
 Date: 2025-09-18
 
 ## Updated

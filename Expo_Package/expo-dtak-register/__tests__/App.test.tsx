@@ -15,6 +15,11 @@ describe("App onboarding flow", () => {
   it("shows mission-ready copy and gates progression on valid sign-up input", () => {
     const { getByText, getByPlaceholderText, queryByText, getByRole } = render(<App />);
 
+    expect(getByText("Sign in to continue")).toBeTruthy();
+
+    const createAccountButton = getByRole("button", { name: "Create account" });
+    fireEvent.press(createAccountButton);
+
     expect(getByText("Securely create your account")).toBeTruthy();
 
     const continueButton = getByRole("button", { name: "Continue" });
@@ -35,7 +40,9 @@ describe("App onboarding flow", () => {
   });
 
   it("walks the user through the onboarding flow to mission-ready state", () => {
-    const { getByText, getByPlaceholderText, getByRole } = render(<App />);
+    const { getByText, getByPlaceholderText, getByRole, getByTestId } = render(<App />);
+
+    fireEvent.press(getByRole("button", { name: "Create account" }));
 
     fireEvent.changeText(getByPlaceholderText("e.g. Alex Hunter"), "Alex Hunter");
     fireEvent.changeText(getByPlaceholderText("you@unit.mil"), "alex@unit.mil");
@@ -49,8 +56,7 @@ describe("App onboarding flow", () => {
     fireEvent.press(getByRole("button", { name: "Take Selfie" }));
     fireEvent.press(getByRole("button", { name: "Looks good — Continue" }));
 
-    expect(getByText("Creating your account…")).toBeTruthy();
-    expect(getByText("Initializing secure container")).toBeTruthy();
+    expect(getByTestId("face-scan-loader")).toBeTruthy();
 
     act(() => {
       jest.advanceTimersByTime(3200);

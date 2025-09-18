@@ -14,6 +14,13 @@
 - Added `docs/design-visual-guide.md` to capture color tokens, typography, and spacing rules for quick reference.
 - Created `src/components/ui-library.tsx` that centralizes reusable primitives (logo badge, Card, CTA, GhostButton, Field, Loader) for future screen work.
 
+**2025-09-19 – Login Entry Screen**
+- Added a `LoginScreen` state before signup so returning users authenticate without re-entering profile data.
+- Captured plugin preview return intent with a `pluginsReturnStep` state so both login-driven previews and post-onboarding previews close back to the correct screen.
+- Updated onboarding tests to open the signup path via the new "Create account" secondary action while still validating input gating.
+- Replaced the generic spinner with a looping face-scan animation during the creating step, reusing the four `Face Scan` assets to signal identity processing visually.
+- Simplified the creating experience to a full-screen face-scan interstitial so users focus on the identity verification motif while setup completes.
+
 **What I Implemented**
 - Single portable RN app with a state-driven flow (no external nav dependencies) in `MVP - Onboarding, Map/RN_App.jsx`:
   - Sign Up (Register Screen 1 reference): name, email, password, CTA.
