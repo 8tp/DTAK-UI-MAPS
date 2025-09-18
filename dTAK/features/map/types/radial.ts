@@ -9,7 +9,8 @@ export type RadialAction =
 	| "route"
 	| "compass"
 	| "circle"
-	| "square";
+	| "square"
+	| "grid";
 
 export type ScreenPoint = { x: number; y: number };
 
@@ -26,6 +27,7 @@ export type RadialSelectContext = {
 	startCircle?: () => void;
 	startSquare?: () => void;
 	startMarker?: () => void;
+	startGrid?: () => void;
 };
 
 

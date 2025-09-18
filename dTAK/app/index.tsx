@@ -26,6 +26,7 @@ import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 import { RadialMenu } from "../features/map/components/RadialMenu";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useDrawSquare } from "../features/map/hooks/useDrawSquare";
+import { useDrawGrid } from "../features/map/hooks/useDrawGrid";
 import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
 import {
 	MarkerCreationOverlay,
@@ -82,6 +83,7 @@ export default function App() {
 	const mapRef = useRef<MapViewRef | null>(null);
 	const draw = useDrawCircle();
 	const drawSquare = useDrawSquare();
+	const drawGrid = useDrawGrid();
 	const { select } = useFeatureDeletion();
 	const offline = useOfflineMaps();
 	const { state, dispatch } = useMarkers();
@@ -106,6 +108,9 @@ export default function App() {
 			},
 			startSquare: () => {
 				if (mapRef.current) drawSquare.start(mapRef.current);
+			},
+			startGrid: () => {
+				if (mapRef.current) drawGrid.start(mapRef.current);
 			},
 			startMarker: () => {
 				if (mapRef.current && anchor) {
@@ -160,6 +165,17 @@ export default function App() {
 					id: (square.properties as any).id,
 					type: "square",
 					delete: () => drawSquare.removeSquareById((square.properties as any).id),
+				});
+				setVisible(false);
+				return;
+			}
+			// Check for grid near the press coordinate
+			const grid = drawGrid.findGridAtCoordinate([coord[0], coord[1]]);
+			if (grid) {
+				select({
+					id: (grid.properties as any).id,
+					type: "grid",
+					delete: () => drawGrid.removeGridById((grid.properties as any).id),
 				});
 				setVisible(false);
 				return;
@@ -314,6 +330,36 @@ export default function App() {
 						<LineLayer
 							id="squaresLine"
 							style={{ lineColor: "#16a34a", lineWidth: 2 }}
+						/>
+					</ShapeSource>
+				)}
+				{/* Grid preview source (white thick lines, no fill) */}
+				{drawGrid.sources.preview && (
+					<ShapeSource id="gridPreviewSource" shape={drawGrid.sources.preview}>
+						<LineLayer
+							id="gridPreviewLine"
+							style={{
+								lineColor: "#FFFFFF",
+								lineWidth: 4,
+								lineOpacity: 1,
+								lineCap: "round",
+								lineJoin: "round",
+							}}
+						/>
+					</ShapeSource>
+				)}
+				{/* Persisted grids */}
+				{drawGrid.sources.grids && drawGrid.sources.grids.features.length > 0 && (
+					<ShapeSource id="gridsSource" shape={drawGrid.sources.grids}>
+						<LineLayer
+							id="gridsLine"
+							style={{
+								lineColor: "#FFFFFF",
+								lineWidth: 4,
+								lineOpacity: 1,
+								lineCap: "round",
+								lineJoin: "round",
+							}}
 						/>
 					</ShapeSource>
 				)}
@@ -491,6 +537,26 @@ export default function App() {
 					onResponderRelease={(e: GestureResponderEvent) => {
 						const { locationX, locationY } = e.nativeEvent;
 						drawSquare.onRelease([locationX, locationY]);
+					}}
+				/>
+			)}
+			{drawGrid.mode === "DRAW_GRID" && (
+				<View
+					style={StyleSheet.absoluteFill}
+					pointerEvents="box-only"
+					onStartShouldSetResponder={() => true}
+					onMoveShouldSetResponder={() => true}
+					onResponderGrant={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						drawGrid.onTap([locationX, locationY]);
+					}}
+					onResponderMove={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						drawGrid.onDrag([locationX, locationY]);
+					}}
+					onResponderRelease={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						drawGrid.onRelease([locationX, locationY]);
 					}}
 				/>
 			)}
