@@ -4,8 +4,10 @@
 import React, {
   Dispatch,
   SetStateAction,
+  useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -22,6 +24,13 @@ import {
   ViewStyle,
 } from "react-native";
 import * as Location from "expo-location";
+import {
+  CameraType,
+  CameraView,
+  getCameraPermissionsAsync,
+  requestCameraPermissionsAsync,
+} from "expo-camera";
+import type { CameraCapturedPicture } from "expo-camera";
 import MapPluginsScreen from "./MapPluginsScreen";
 
 type Step =
@@ -62,6 +71,10 @@ const DtakLogoBadge: React.FC = () => (
   <Image source={DTAK_LOGO} style={S.logo} resizeMode="contain" />
 );
 
+const FRONT_CAMERA_TYPE: CameraType = (
+  (CameraType as unknown as { front?: CameraType })?.front ?? "front"
+) as CameraType;
+
 const isEmail = (value: string): boolean => /.+@.+\..+/.test(value);
 const strongEnough = (value: string): boolean =>
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{15,}$/.test(
@@ -78,7 +91,8 @@ const App: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [address, setAddress] = useState<string>("");
   const [callsign, setCallsign] = useState<string>("");
-  const [selfieTaken, setSelfieTaken] = useState<boolean>(false);
+  const [selfiePhoto, setSelfiePhoto] =
+    useState<CameraCapturedPicture | null>(null);
   const [ticks, setTicks] = useState<number>(0);
   const [userLocation, setUserLocation] =
     useState<Location.LocationObject | null>(null);
@@ -159,8 +173,9 @@ const App: React.FC = () => {
           )}
           {step === "selfie" && (
             <SelfieScreen
-              selfieTaken={selfieTaken}
-              onCapture={() => setSelfieTaken(true)}
+              selfie={selfiePhoto}
+              onCapture={(photo) => setSelfiePhoto(photo)}
+              onRetake={() => setSelfiePhoto(null)}
               onNext={() => setStep("creating")}
             />
           )}
@@ -498,46 +513,222 @@ const AddressCallsignScreen: React.FC<AddressCallsignScreenProps> = ({
 };
 
 type SelfieScreenProps = {
-  selfieTaken: boolean;
-  onCapture: () => void;
+  selfie: CameraCapturedPicture | null;
+  onCapture: (photo: CameraCapturedPicture) => void;
+  onRetake: () => void;
   onNext: () => void;
 };
 
+type CameraViewHandle = {
+  takePictureAsync: (options?: {
+    quality?: number;
+    base64?: boolean;
+    skipProcessing?: boolean;
+  }) => Promise<CameraCapturedPicture>;
+};
+
 const SelfieScreen: React.FC<SelfieScreenProps> = ({
-  selfieTaken,
+  selfie,
   onCapture,
+  onRetake,
   onNext,
-}) => (
-  <Card style={{ padding: 0 }}>
-    <View style={S.cameraBox}>
-      <View style={S.reticleOuter}>
-        <View style={S.reticleCrossH} />
-        <View style={S.reticleCrossV} />
+}) => {
+  const cameraRef = useRef<CameraViewHandle | null>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [permissionLoading, setPermissionLoading] = useState<boolean>(true);
+  const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const seedPermissions = async (): Promise<void> => {
+      setPermissionLoading(true);
+      try {
+        const existing = await getCameraPermissionsAsync();
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (existing.status === "granted") {
+          setHasPermission(true);
+          return;
+        }
+
+        if (existing.status === "undetermined") {
+          const requested = await requestCameraPermissionsAsync();
+
+          if (!isMounted) {
+            return;
+          }
+
+          setHasPermission(requested.status === "granted");
+          if (requested.status !== "granted") {
+            setError("Camera permission was denied.");
+          }
+          return;
+        }
+
+        setHasPermission(false);
+      } catch {
+        if (isMounted) {
+          setHasPermission(false);
+          setError("Unable to access camera. Check permission settings.");
+        }
+      } finally {
+        if (isMounted) {
+          setPermissionLoading(false);
+        }
+      }
+    };
+
+    seedPermissions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const requestPermission = useCallback(async (): Promise<void> => {
+    setPermissionLoading(true);
+    setError(null);
+
+    try {
+      const response = await requestCameraPermissionsAsync();
+      const granted = response.status === "granted";
+      setHasPermission(granted);
+
+      if (!granted) {
+        setError("Camera permission was denied.");
+      }
+    } catch {
+      setHasPermission(false);
+      setError("Unable to request camera access. Open system settings to enable it.");
+    } finally {
+      setPermissionLoading(false);
+    }
+  }, []);
+
+  const handleCapture = useCallback(async (): Promise<void> => {
+    if (!cameraRef.current || isCapturing) {
+      return;
+    }
+
+    setError(null);
+    setIsCapturing(true);
+
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.6,
+        base64: true,
+        skipProcessing: true,
+      });
+
+      onCapture(photo);
+    } catch (captureError) {
+      setError("Unable to capture photo. Please try again.");
+    } finally {
+      setIsCapturing(false);
+    }
+  }, [isCapturing, onCapture]);
+
+  const handleRetake = useCallback(() => {
+    setError(null);
+    onRetake();
+  }, [onRetake]);
+
+  return (
+    <Card style={{ padding: 0 }}>
+      <View style={S.cameraBox}>
+        {selfie ? (
+          <Image
+            source={{ uri: selfie.uri }}
+            style={S.cameraView}
+            resizeMode="cover"
+          />
+        ) : hasPermission ? (
+          <CameraView
+            ref={(instance) => {
+              cameraRef.current = instance;
+            }}
+            style={S.cameraView}
+            facing={FRONT_CAMERA_TYPE}
+            ratio="4:3"
+          />
+        ) : permissionLoading ? (
+          <View style={[S.cameraView, S.cameraFallback]}>
+            <ActivityIndicator color={T.primary} />
+          </View>
+        ) : (
+          <View style={[S.cameraView, S.cameraFallback]}>
+            <Text style={S.permissionText}>
+              Camera access is required to verify your identity.
+            </Text>
+          </View>
+        )}
+
+        {hasPermission && !selfie && (
+          <>
+            <View style={S.reticleOuter}>
+              <View style={S.reticleCrossH} />
+              <View style={S.reticleCrossV} />
+            </View>
+            <View style={S.cameraHint}>
+              <Text style={S.cameraHintTxt}>
+                Align face within the circle and hold steady
+              </Text>
+            </View>
+          </>
+        )}
       </View>
-      <View style={S.cameraHint}>
-        <Text style={S.cameraHintTxt}>
-          Align face within the circle and hold steady
+      <View style={{ padding: 16 }}>
+        {error && <Text style={S.cameraError}>{error}</Text>}
+
+        {hasPermission && !selfie && (
+          <TouchableOpacity
+            onPress={handleCapture}
+            style={[S.primaryBtn, isCapturing && { opacity: 0.6 }]}
+            accessibilityRole="button"
+            disabled={isCapturing}
+          >
+            {isCapturing ? (
+              <ActivityIndicator color="#081120" />
+            ) : (
+              <Text style={S.primaryBtnTxt}>Take Selfie</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {!hasPermission && (
+          <TouchableOpacity
+            onPress={requestPermission}
+            style={[S.primaryBtn, permissionLoading && { opacity: 0.6 }]}
+            accessibilityRole="button"
+            disabled={permissionLoading}
+          >
+            {permissionLoading ? (
+              <ActivityIndicator color="#081120" />
+            ) : (
+              <Text style={S.primaryBtnTxt}>Enable Camera</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {selfie && (
+          <>
+            <CTA title="Looks good — Continue" onPress={onNext} />
+            <GhostBtn title="Retake selfie" onPress={handleRetake} />
+          </>
+        )}
+
+        <Text style={[S.subText, { marginTop: 8 }]}>
+          Photo processed on-device. Identity hashing occurs locally first.
         </Text>
       </View>
-    </View>
-    <View style={{ padding: 16 }}>
-      {!selfieTaken ? (
-        <TouchableOpacity
-          onPress={onCapture}
-          style={S.primaryBtn}
-          accessibilityRole="button"
-        >
-          <Text style={S.primaryBtnTxt}>Take Selfie</Text>
-        </TouchableOpacity>
-      ) : (
-        <CTA title="Looks good — Continue" onPress={onNext} />
-      )}
-      <Text style={[S.subText, { marginTop: 8 }]}>
-        Photo processed on-device. Identity hashing occurs locally first.
-      </Text>
-    </View>
-  </Card>
-);
+    </Card>
+  );
+};
 
 type CreatingScreenProps = {
   ticks: number;
@@ -725,8 +916,12 @@ const S = StyleSheet.create({
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
   reticleOuter: {
+    position: "absolute",
+    top: 80,
+    alignSelf: "center",
     height: 220,
     width: 220,
     borderRadius: 110,
@@ -762,6 +957,26 @@ const S = StyleSheet.create({
     paddingVertical: 8,
   },
   cameraHintTxt: { color: T.text, textAlign: "center", fontSize: 13 },
+  cameraView: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  cameraFallback: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#0f1117",
+    paddingHorizontal: 24,
+  },
+  permissionText: {
+    color: T.sub,
+    fontSize: 14,
+    textAlign: "center",
+  },
+  cameraError: {
+    color: "#ff7185",
+    fontSize: 14,
+    marginBottom: 8,
+  },
   creatingFullScreen: {
     flex: 1,
     alignItems: "center",

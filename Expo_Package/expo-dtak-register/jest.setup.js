@@ -30,3 +30,45 @@ jest.mock(
   },
   { virtual: true }
 );
+
+jest.mock(
+  "expo-camera",
+  () => {
+    const React = require("react");
+    const { View } = require("react-native");
+
+    const takePictureAsync = jest.fn(async () => ({
+      uri: "mock://selfie.jpg",
+      base64: "c2VsZmll",
+      width: 400,
+      height: 400,
+    }));
+
+    const MockCameraView = React.forwardRef((props, ref) => {
+      React.useImperativeHandle(ref, () => ({
+        takePictureAsync,
+      }));
+
+      return <View {...props} />;
+    });
+
+    MockCameraView.displayName = "MockCameraView";
+
+    const getCameraPermissionsAsync = jest.fn(async () => ({
+      status: "granted",
+    }));
+
+    const requestCameraPermissionsAsync = jest.fn(async () => ({
+      status: "granted",
+    }));
+
+    return {
+      __esModule: true,
+      CameraView: MockCameraView,
+      CameraType: { front: "front", back: "back" },
+      getCameraPermissionsAsync,
+      requestCameraPermissionsAsync,
+    };
+  },
+  { virtual: true }
+);

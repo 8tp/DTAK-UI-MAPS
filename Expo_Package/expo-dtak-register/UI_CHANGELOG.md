@@ -1,5 +1,22 @@
 # UI Changelog (Registration Screens)
 
+Date: 2025-09-20
+
+## Added
+- Integrated Expo camera capture into the Selfie verification step, including real permission handling, live preview, and a retake loop that keeps the existing circular reticle and hint overlay.
+
+## Fixed
+- Swapped to `CameraView` API with graceful fallbacks when the module is absent, preventing runtime "invalid element type" errors and ensuring the front camera selector defaults to string-based facing on development builds without native modules.
+
+## Updated
+- `App.tsx` now stores the captured selfie payload so the onboarding flow can forward the photo to account provisioning, and shows inline error/permission messaging when the capture fails.
+- Test suite `__tests__/App.test.tsx` mocks `expo-camera` and waits for the asynchronous capture state before advancing to the Creating screen.
+- Jest setup adds a mock camera implementation to keep snapshot tests deterministic.
+- `package.json` declares `expo-camera` as a managed dependency; run `npm install` (with network access) to refresh `package-lock.json` and download native modules.
+
+## Notes
+- Device builds must prompt for camera usage; ensure iOS/Android privacy manifests include purpose strings when preparing a release shell.
+
 Date: 2025-09-19
 
 ## Added
