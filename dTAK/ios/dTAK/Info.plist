@@ -45,6 +45,14 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+			<key>NSCameraUsageDescription</key>
+	<string>Camera access is required to capture mission photos and annotate them for your team.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Location access attaches geo-coordinates to captured imagery for mission context.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Photo library access is needed to save annotated images for later sharing.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access is needed to import and review mission imagery.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

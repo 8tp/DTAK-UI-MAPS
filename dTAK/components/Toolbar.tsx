@@ -7,9 +7,10 @@ import TransparentButton from "./TransparentButton";
 type ToolbarProps = {
 	style?: ViewStyle;
 	onAccountPress?: (event: GestureResponderEvent) => void;
+	onCameraPress?: (event: GestureResponderEvent) => void;
 };
 
-export default function Toolbar({ style, onAccountPress }: ToolbarProps) {
+export default function Toolbar({ style, onAccountPress, onCameraPress }: ToolbarProps) {
 	const [showUtilityPills, setShowUtilityPills] = useState(true);
 
 	return (
@@ -35,7 +36,9 @@ export default function Toolbar({ style, onAccountPress }: ToolbarProps) {
 			<>
 				<ToolbarPill
 					iconComponent={<Feather name="camera" size={20} color="#FFFFFF" />}
+					onPress={onCameraPress}
 					accessibilityLabel="Open camera"
+					ariaHint="Launches the camera capture workflow"
 				/>
 				<ToolbarPill icon={require("@assets/images/group-chat.png")} text="Chat" />
 			</>
