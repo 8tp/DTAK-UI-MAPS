@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
 	FlatList,
 	Modal,
-	Platform,
 	Pressable,
 	StyleSheet,
 	Text,
@@ -10,7 +9,7 @@ import {
 	View,
 } from "react-native";
 import { GiftedChat, IMessage, User } from "react-native-gifted-chat";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 export type MinimalUser = Pick<User, "_id" | "name" | "avatar">;
 
@@ -100,48 +99,50 @@ export default function ChatInboxModal({
 			animationType="slide"
 			presentationStyle="fullScreen"
 			onRequestClose={onDismiss}>
-			<SafeAreaView
-				style={styles.modalContainer}
-				edges={Platform.select({ ios: ["top", "bottom"], default: ["bottom"] })}>
-				<View style={styles.header}>
-					<Text style={styles.title}>{activeThread ? activeThread.title : headerTitle}</Text>
-					<TouchableOpacity onPress={activeThread ? () => setActiveThreadId(null) : onDismiss}>
-						<Text style={styles.headerAction}>{activeThread ? "Back" : "Close"}</Text>
-					</TouchableOpacity>
-				</View>
-
-				{!activeThread ? (
-					<FlatList
-						data={sortedThreads}
-						keyExtractor={(item) => item.id}
-						renderItem={renderThreadItem}
-						ItemSeparatorComponent={() => <View style={styles.separator} />}
-						contentContainerStyle={sortedThreads.length === 0 ? styles.emptyStateContainer : undefined}
-						ListEmptyComponent={() => (
-							<View style={styles.emptyState}>
-								<Text style={styles.emptyStateTitle}>No conversations yet</Text>
-								<Text style={styles.emptyStateSubtitle}>
-									Start a new chat to see it appear here.
-								</Text>
-							</View>
-						)}
-					/>
-				) : (
-					<View style={styles.chatContainer}>
-						<GiftedChat
-							messages={activeThread.messages}
-							onSend={(msgs) => onSend?.(activeThread.id, msgs)}
-							user={currentUser}
-							placeholder="Type a message..."
-							keyboardShouldPersistTaps="handled"
-							renderAvatarOnTop
-							renderUsernameOnMessage
-							showUserAvatar
-							maxInputLength={250}
-						/>
+			<SafeAreaProvider>
+				<SafeAreaView
+					style={styles.modalContainer}
+					edges={["top", "bottom"]}>
+					<View style={styles.header}>
+						<Text style={styles.title}>{activeThread ? activeThread.title : headerTitle}</Text>
+						<TouchableOpacity onPress={activeThread ? () => setActiveThreadId(null) : onDismiss}>
+							<Text style={styles.headerAction}>{activeThread ? "Back" : "Close"}</Text>
+						</TouchableOpacity>
 					</View>
-				)}
-			</SafeAreaView>
+
+					{!activeThread ? (
+						<FlatList
+							data={sortedThreads}
+							keyExtractor={(item) => item.id}
+							renderItem={renderThreadItem}
+							ItemSeparatorComponent={() => <View style={styles.separator} />}
+							contentContainerStyle={sortedThreads.length === 0 ? styles.emptyStateContainer : undefined}
+							ListEmptyComponent={() => (
+								<View style={styles.emptyState}>
+									<Text style={styles.emptyStateTitle}>No conversations yet</Text>
+									<Text style={styles.emptyStateSubtitle}>
+										Start a new chat to see it appear here.
+									</Text>
+								</View>
+							)}
+						/>
+					) : (
+						<View style={styles.chatContainer}>
+							<GiftedChat
+								messages={activeThread.messages}
+								onSend={(msgs) => onSend?.(activeThread.id, msgs)}
+								user={currentUser}
+								placeholder="Type a message..."
+								keyboardShouldPersistTaps="handled"
+								renderAvatarOnTop
+								renderUsernameOnMessage
+								showUserAvatar
+								maxInputLength={250}
+							/>
+						</View>
+					)}
+				</SafeAreaView>
+			</SafeAreaProvider>
 		</Modal>
 	);
 }
