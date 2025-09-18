@@ -1,7 +1,7 @@
 PODS:
-  - EXConstants (18.0.9):
+  - EXConstants (18.0.8):
     - ExpoModulesCore
-  - Expo (54.0.8):
+  - Expo (54.0.7):
     - ExpoModulesCore
     - hermes-engine
     - RCTRequired
@@ -34,7 +34,7 @@ PODS:
     - ExpoModulesCore
   - ExpoHaptics (15.0.7):
     - ExpoModulesCore
-  - ExpoHead (6.0.6):
+  - ExpoHead (6.0.4):
     - ExpoModulesCore
     - RNScreens
   - ExpoImage (3.0.8):
@@ -48,7 +48,7 @@ PODS:
     - ExpoModulesCore
   - ExpoLinking (8.0.8):
     - ExpoModulesCore
-  - ExpoModulesCore (3.0.16):
+  - ExpoModulesCore (3.0.15):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2323,22 +2323,21 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  EXConstants: 59d46d25b89f88cc38291a56dbce4d550758f72d
-  Expo: 40b8889f991ca5f25ead0bfcbc1f818b01efab9e
-  ExpoAsset: 4375a46b45b12bbfcf6efac8c8a33aebdb8ba12b
-  ExpoFileSystem: adffad7d1f57f768ca7a5e3bf450312fb9ebd27a
-  ExpoFont: d3e56c7cc03d9fd113b90a5513ad32b4bf46b0ff
-  ExpoHaptics: b48d913e7e5f23816c6f130e525c9a6501b160b5
-  ExpoHead: bd3ceefbd93f64ff8298e07711bb67605ffb646c
-  ExpoImage: 306dd755c842dba9f3ee654c51834a9cc657e6ca
-  ExpoKeepAwake: 3f5e3ac53627849174f3603271df8e08f174ed4a
-  ExpoLinking: f5c171877e118e792cb9a77e5ade0b080d899b14
-  ExpoModulesCore: af36f958c77e8551bc34cd62cf166eeb6a8d9920
-  ExpoNetwork: 0d2c2504d56096fe8be3930d5c70cb3390dac5bf
-  ExpoSplashScreen: 9d2ff8fa08f2c00336a83f93bebffed3a8312519
-  ExpoSymbols: ef7b8ac77ac2d496b1bc3f0f7daf5e19c3a9933a
-  ExpoSystemUI: 5e7fbe4b716edb9e3a7bc0441e4a3b6b1f9eb1ea
-  ExpoWebBrowser: 4f0dc52a559027cc0fba6920adc19a7604e2733d
+  EXConstants: 7e4654405af367ff908c863fe77a8a22d60bd37d
+  Expo: 170291b86adbf5fe95d36bc7a90288203cec739e
+  ExpoAsset: 84810d6fed8179f04d4a7a4a6b37028bbd726e26
+  ExpoFileSystem: 4fb06865906e781329eb67166bd64fc4749c3019
+  ExpoFont: 86ceec09ffed1c99cfee36ceb79ba149074901b5
+  ExpoHaptics: 807476b0c39e9d82b7270349d6487928ce32df84
+  ExpoHead: 2aad68c730f967d2533599dabb64d1d2cd9f765a
+  ExpoImage: e88f500585913969b930e13a4be47277eb7c6de8
+  ExpoKeepAwake: 1a2e820692e933c94a565ec3fbbe38ac31658ffe
+  ExpoLinking: f051f28e50ea9269ff539317c166adec81d9342d
+  ExpoModulesCore: 9281d8f1cda9d0c37dbce34c26014212b22eb8c0
+  ExpoSplashScreen: cbb839de72110dea1851dd3e85080b7923af2540
+  ExpoSymbols: 1ae04ce686de719b9720453b988d8bc5bf776c68
+  ExpoSystemUI: 6cd74248a2282adf6dec488a75fa532d69dee314
+  ExpoWebBrowser: 533bc2a1b188eec1c10e4926decf658f1687b5e5
   FBLazyVector: 9e0cd874afd81d9a4d36679daca991b58b260d42
   hermes-engine: 35c763d57c9832d0eef764316ca1c4d043581394
   libavif: 84bbb62fb232c3018d6f1bab79beea87e35de7b7
