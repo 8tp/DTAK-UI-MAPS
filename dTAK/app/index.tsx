@@ -34,9 +34,12 @@ import {
 	type MarkerCreationOverlayHandle,
 } from "../features/markers/components/MarkerCreationOverlay";
 import { MarkersOverlay } from "../features/markers/components/MarkersOverlay";
+import { MarkerDetailsModal } from "../features/markers/components/MarkerDetailsModal";
+import { ICONS } from "../features/markers/constants/icons";
 import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
 import type { BBox } from "../features/offline/tiles";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
+import { useMarkers } from "../features/markers/state/MarkersProvider";
 
 const BOTTOM_SHEET_BACKGROUND = "#26292B";
 
@@ -85,7 +88,12 @@ export default function App() {
 	const drawSquare = useDrawSquare();
 	const { select } = useFeatureDeletion();
 	const offline = useOfflineMaps();
+	const { state: markersState, dispatch: markersDispatch } = useMarkers();
 	const markerCreationRef = useRef<MarkerCreationOverlayHandle | null>(null);
+    const [createModalVisible, setCreateModalVisible] = useState(false);
+    const [createIconId, setCreateIconId] = useState<string>("marker-default-pin");
+    const [pendingCreateCoord, setPendingCreateCoord] = useState<[number, number] | undefined>(undefined);
+    const [viewMarkerId, setViewMarkerId] = useState<string | undefined>(undefined);
 
 	const sheetRef = useRef<BottomSheet>(null);
 
@@ -321,13 +329,58 @@ export default function App() {
 					</ShapeSource>
 				)}
 				{/* Markers overlay */}
-				<MarkersOverlay />
+				<MarkersOverlay onMarkerPress={(id) => setViewMarkerId(id)} />
 				{/* Marker creation overlay with preview + modal (must be inside MapView) */}
-				<MarkerCreationOverlay ref={markerCreationRef} />
+				<MarkerCreationOverlay
+					ref={markerCreationRef}
+					onPreviewStart={(coord) => {
+						setPendingCreateCoord(coord);
+						setCreateIconId("marker-default-pin");
+						setCreateModalVisible(true);
+					}}
+				/>
 
 				{/* User location marker */}
 				<UserLocation />
 			</MapView>
+			{/* Marker Details Modal - Create */}
+			<MarkerDetailsModal
+				visible={createModalVisible}
+				mode="create"
+				initialIconId={createIconId}
+				icons={ICONS}
+				onCancel={() => {
+					setCreateModalVisible(false);
+					setPendingCreateCoord(undefined);
+					markerCreationRef.current?.cancel();
+				}}
+				onIconChange={(id) => {
+					setCreateIconId(id);
+					markerCreationRef.current?.setIconId(id);
+				}}
+				onSave={({ title, description, iconId }) => {
+					if (!pendingCreateCoord) return;
+					const [lon, lat] = pendingCreateCoord;
+						markersDispatch({ type: "addMarker", payload: { lon, lat, meta: { title, description, iconId } } });
+						setCreateModalVisible(false);
+						setPendingCreateCoord(undefined);
+						markerCreationRef.current?.cancel();
+				}}
+			/>
+
+			{/* Marker Details Modal - View */}
+			<MarkerDetailsModal
+				visible={!!viewMarkerId}
+				mode="view"
+				icons={ICONS as any}
+				onCancel={() => setViewMarkerId(undefined)}
+				onDelete={() => {
+					if (!viewMarkerId) return;
+					markersDispatch({ type: "removeMarker", payload: { id: viewMarkerId } });
+					setViewMarkerId(undefined);
+				}}
+				marker={viewMarkerId ? (() => { const m = markersState.markers[viewMarkerId]; return m ? { title: m.title, description: m.description, iconId: m.iconId, createdAt: m.createdAt } : undefined; })() : undefined}
+			/>
 
 			{/* Toolbar fixed at the top */}
 			<SafeAreaView style={styles.toolbarContainer}>
