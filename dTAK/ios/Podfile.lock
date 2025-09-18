@@ -1,9 +1,11 @@
 PODS:
   - EXConstants (18.0.9):
+  - EXConstants (18.0.9):
     - ExpoModulesCore
   - EXImageLoader (6.0.0):
     - ExpoModulesCore
     - React-Core
+  - Expo (54.0.8):
   - Expo (54.0.8):
     - ExpoModulesCore
     - hermes-engine
@@ -42,6 +44,7 @@ PODS:
   - ExpoHaptics (15.0.7):
     - ExpoModulesCore
   - ExpoHead (6.0.6):
+  - ExpoHead (6.0.6):
     - ExpoModulesCore
     - RNScreens
   - ExpoImage (3.0.8):
@@ -64,6 +67,7 @@ PODS:
   - ExpoMediaLibrary (18.2.0):
     - ExpoModulesCore
     - React-Core
+  - ExpoModulesCore (3.0.16):
   - ExpoModulesCore (3.0.16):
     - hermes-engine
     - RCTRequired

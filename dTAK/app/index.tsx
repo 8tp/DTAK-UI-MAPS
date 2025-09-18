@@ -19,7 +19,7 @@ import {
 } from "@maplibre/maplibre-react-native";
 import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
-import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
+import { GestureResponderEvent, Pressable, Pressable, StyleSheet, Text, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
