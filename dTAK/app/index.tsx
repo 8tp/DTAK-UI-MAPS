@@ -237,7 +237,13 @@ export default function App() {
 
 	return (
 		<View style={styles.page}>
-			<MapView ref={mapRef as any} style={styles.map} onLongPress={onMapLongPress}>
+			{/* Set a base style URL to ensure proper layer graph and ordering */}
+			<MapView
+				ref={mapRef as any}
+				style={styles.map}
+				onLongPress={onMapLongPress}
+				{...({ styleURL: "https://demotiles.maplibre.org/style.json" } as any)}
+			>
 				<Camera
 					zoomLevel={
 						mapConfigurations[selectedMap as keyof typeof mapConfigurations].zoomLevel

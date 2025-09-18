@@ -38,8 +38,8 @@ export function MarkersOverlay() {
         if (!id) return;
         setViewMarkerId(id);
       }}>
-        <CircleLayer id="markers-circles" style={{ circleColor: "#ff3b30", circleRadius: 6 }} filter={["==", ["get", "icon"], "placeholder"] as any} />
-        <SymbolLayer id="markers-symbols" style={{ iconImage: ["get", "icon"], iconAllowOverlap: true, iconIgnorePlacement: true, iconSize: 1.0 }} />
+        <CircleLayer id="markers-circles" aboveLayerID="satelliteLayer" style={{ circleColor: "#ff3b30", circleRadius: 6 }} filter={["==", ["get", "icon"], "placeholder"] as any} />
+        <SymbolLayer id="markers-symbols" aboveLayerID="satelliteLayer" style={{ iconImage: ["get", "icon"], iconAllowOverlap: true, iconIgnorePlacement: true, iconSize: 1.0 }} />
       </ShapeSource>
 
       <MarkerDetailsModal
