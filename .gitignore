@@ -53,3 +53,4 @@ Expo_Package/**/.expo-shared/
 # OS files
 .DS_Store
 
+Expo_Package/expo-dtak-register/package-lock.json
