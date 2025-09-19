@@ -64,19 +64,19 @@ const defaultMaps: MapData[] = [
 	{
 		id: "new-york",
 		name: "New York",
-		thumbnail: require("@assets/images/radial-pin.png"), // Placeholder - you'll need actual map thumbnails
+		thumbnail: require("../assets/images/radial-pin.png"), // Placeholder - you'll need actual map thumbnails
 		selected: true,
 	},
 	{
 		id: "chicago",
 		name: "Chicago",
-		thumbnail: require("@assets/images/radial-pin.png"), // Placeholder
+		thumbnail: require("../assets/images/radial-pin.png"), // Placeholder
 		selected: false,
 	},
 	{
 		id: "montgomery",
 		name: "Montgomery",
-		thumbnail: require("@assets/images/radial-pin.png"), // Placeholder
+		thumbnail: require("../assets/images/radial-pin.png"), // Placeholder
 		selected: false,
 	},
 ];

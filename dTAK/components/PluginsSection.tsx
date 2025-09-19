@@ -57,7 +57,7 @@ const defaultPlugins: PluginData[] = [
 	{
 		id: "chat",
 		name: "CHAT",
-		icon: require("@assets/images/group-chat.png"),
+		icon: require("../assets/images/group-chat.png"),
 	},
 ];
 

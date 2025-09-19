@@ -84,7 +84,7 @@ export default function AccountMenu({ visible, onClose }: Props) {
 							testID="account-menu-notifications">
 							<View style={styles.rowIconContainer}>
 								<Image
-									source={require("@assets/images/notification-icon.png")}
+									source={require("../assets/images/notification-icon.png")}
 									style={styles.rowIcon}
 									resizeMode="contain"
 								/>
