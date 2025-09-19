@@ -341,7 +341,7 @@ export default function App() {
 
 		const acknowledgement: IMessage = {
 			_id: `ack-${threadId}-${firstMessage._id}-${Date.now()}`,
-			text: firstMessage.text ? `Copy that: ${firstMessage.text}` : "Acknowledged.",
+			text: "Okay, got it.",
 			createdAt: new Date(Date.now() + 500),
 			user: targetThread.peer,
 		};
