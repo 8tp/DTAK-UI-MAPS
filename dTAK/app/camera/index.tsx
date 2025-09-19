@@ -1,5 +1,6 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as Location from "expo-location";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -12,8 +13,13 @@ import {
   View,
 } from "react-native";
 
+import type { StoredPhoto } from "../../features/photos/types";
+import { useAnnotatedPhotos } from "../../features/photos/state/AnnotatedPhotosProvider";
+import { movePhotoIntoStorage, removeStoredPhotoFile, statPhoto } from "../../features/photos/storage";
 import { useCameraSession } from "../../src/features/camera/CameraSessionContext";
 import { GeoLocation } from "../../src/features/camera/types";
+
+const MAX_CAPTURE_DIMENSION = 1600;
 
 const createId = () => `${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
 
@@ -21,6 +27,7 @@ const CameraCaptureScreen = () => {
   const router = useRouter();
   const cameraRef = useRef<CameraView | null>(null);
   const { setCapturedPhoto, resetSession } = useCameraSession();
+  const { addPhoto } = useAnnotatedPhotos();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -92,26 +99,77 @@ const CameraCaptureScreen = () => {
     setErrorMessage(null);
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({
+      const rawPhoto = await cameraRef.current.takePictureAsync({
         quality: 1,
         skipProcessing: true,
         exif: true,
       });
 
-      if (!photo) {
+      if (!rawPhoto) {
         throw new Error("Capture returned no photo");
       }
 
+      const photoId = createId();
+      const createdAt = Date.now();
+
+      let workingUri = rawPhoto.uri;
+      let workingWidth = rawPhoto.width ?? 0;
+      let workingHeight = rawPhoto.height ?? 0;
+
+      if (workingWidth > 0 && workingHeight > 0) {
+        const maxDimension = Math.max(workingWidth, workingHeight);
+        if (maxDimension > MAX_CAPTURE_DIMENSION) {
+          const scale = MAX_CAPTURE_DIMENSION / maxDimension;
+          const targetWidth = Math.round(workingWidth * scale);
+          const targetHeight = Math.round(workingHeight * scale);
+
+          const manipulated = await manipulateAsync(
+            rawPhoto.uri,
+            [{ resize: { width: targetWidth, height: targetHeight } }],
+            { compress: 0.85, format: SaveFormat.JPEG }
+          );
+
+          workingUri = manipulated.uri;
+          workingWidth = manipulated.width ?? targetWidth;
+          workingHeight = manipulated.height ?? targetHeight;
+        }
+      } else {
+        const manipulated = await manipulateAsync(
+          rawPhoto.uri,
+          [{ resize: { width: MAX_CAPTURE_DIMENSION } }],
+          { compress: 0.85, format: SaveFormat.JPEG }
+        );
+
+        workingUri = manipulated.uri;
+        workingWidth = manipulated.width ?? MAX_CAPTURE_DIMENSION;
+        workingHeight = manipulated.height ?? MAX_CAPTURE_DIMENSION;
+      }
+
+      const storedUri = await movePhotoIntoStorage(workingUri, photoId);
+      if (workingUri !== rawPhoto.uri) {
+        await removeStoredPhotoFile(rawPhoto.uri);
+      }
+
+      const fileInfo = await statPhoto(storedUri);
       const location = await captureLocation();
+      const sizeBytes = typeof fileInfo?.size === "number" ? fileInfo.size : undefined;
+
+      const storedPhoto: StoredPhoto = {
+        id: photoId,
+        uri: storedUri,
+        width: workingWidth,
+        height: workingHeight,
+        createdAt,
+        sizeBytes,
+        geolocation: location,
+      };
 
       setCapturedPhoto({
-        id: createId(),
-        uri: photo.uri,
-        width: photo.width ?? 0,
-        height: photo.height ?? 0,
-        exif: photo.exif ?? undefined,
-        geolocation: location,
+        ...storedPhoto,
+        exif: rawPhoto.exif ?? undefined,
       });
+
+      addPhoto(storedPhoto);
 
       router.push("/camera/preview" as never);
     } catch (error) {
@@ -120,7 +178,7 @@ const CameraCaptureScreen = () => {
     } finally {
       setIsCapturing(false);
     }
-  }, [captureLocation, ensureCameraGranted, router, setCapturedPhoto]);
+  }, [addPhoto, captureLocation, ensureCameraGranted, router, setCapturedPhoto]);
 
   const permissionStatus = cameraPermission?.granted;
   const isPermissionUndetermined = useMemo(() => cameraPermission === null, [cameraPermission]);

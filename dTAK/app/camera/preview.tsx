@@ -3,11 +3,13 @@ import React, { useEffect } from "react";
 import { Image } from "expo-image";
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { useAnnotatedPhotos } from "../../features/photos/state/AnnotatedPhotosProvider";
 import { useCameraSession } from "../../src/features/camera/CameraSessionContext";
 
 const CameraPreviewScreen = () => {
   const router = useRouter();
   const { capturedPhoto, setCapturedPhoto } = useCameraSession();
+  const { removePhoto } = useAnnotatedPhotos();
 
   useEffect(() => {
     if (!capturedPhoto) {
@@ -23,6 +25,9 @@ const CameraPreviewScreen = () => {
   const openEditor = () => router.push("/camera/edit" as never);
 
   const handleRetake = () => {
+    if (capturedPhoto) {
+      void removePhoto(capturedPhoto.id);
+    }
     setCapturedPhoto(undefined);
     goBackToCamera();
   };

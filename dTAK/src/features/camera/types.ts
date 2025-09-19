@@ -1,3 +1,5 @@
+import type { GeoLocation } from "../../../features/photos/types";
+
 export type NormalizedPoint = {
   x: number;
   y: number;
@@ -29,18 +31,13 @@ export type TextAnnotation = {
 
 export type Annotation = CircleAnnotation | ArrowAnnotation | TextAnnotation;
 
-export type GeoLocation = {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-  timestamp: number;
-};
-
 export type CapturedPhoto = {
   id: string;
   uri: string;
   width: number;
   height: number;
+  createdAt: number;
+  sizeBytes?: number;
   exif?: Record<string, unknown>;
   geolocation?: GeoLocation;
 };
