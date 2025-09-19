@@ -1,0 +1,16 @@
+{
+    "timestamp": "2025-09-18T14:45:06.3NZ",
+    "server_url": "http://192.168.13.5:8080",
+    "total_tests": 13,
+    "passed_tests": 9,
+    "failed_tests": 4,
+    "success_rate": 69,
+    "test_categories": {
+        "authentication": "TS-1",
+        "cot_messages": "TS-2, TS-3",
+        "chat_messages": "Basic functionality",
+        "multi_user": "Concurrent operations",
+        "error_handling": "Robustness",
+        "performance": "Load testing"
+    }
+}

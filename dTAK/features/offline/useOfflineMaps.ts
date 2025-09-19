@@ -1,5 +1,5 @@
 import NetInfo from "@react-native-community/netinfo";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	OfflinePack,

@@ -1,7 +1,7 @@
-import AccountMenu from "@components/AccountMenu";
-import MapsSection from "@components/MapsSection";
-import PluginsSection from "@components/PluginsSection";
-import Toolbar from "@components/Toolbar";
+import AccountMenu from "../components/AccountMenu";
+import MapsSection from "../components/MapsSection";
+import PluginsSection from "../components/PluginsSection";
+import Toolbar from "../components/Toolbar";
 import BottomSheet, {
 	BottomSheetBackgroundProps,
 	BottomSheetHandleProps,
@@ -17,9 +17,10 @@ import {
 	ShapeSource,
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { GestureResponderEvent, StyleSheet, TouchableOpacity, View, Text, Pressable } from "react-native";
+import { GestureResponderEvent, StyleSheet, TouchableOpacity, View, Text } from "react-native";
+import { useTak } from "../features/tak/TakContext";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
@@ -62,29 +63,54 @@ const mapConfigurations = {
 };
 
 export default function App() {
-	const router = useRouter();
-	const insets = useSafeAreaInsets();
+	// All hooks must be called before any conditional returns
 	const [visible, setVisible] = useState(false);
 	const [anchor, setAnchor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [coordinate, setCoordinate] = useState<[number, number] | undefined>(undefined);
 	const [selectedMap, setSelectedMap] = useState<string>("new-york");
+	// Removed unused showAccountMenu state - using accountMenuVisible instead
+	const [showOfflineManager, setShowOfflineManager] = useState(false);
+	const [offlineMode, setOfflineMode] = useState(false);
 	const [accountMenuVisible, setAccountMenuVisible] = useState(false);
-	const [offlineMode, setOfflineMode] = useState<boolean>(false);
-	const [showOfflineManager, setShowOfflineManager] = useState<boolean>(false);
+	
 	const mapRef = useRef<MapViewRef | null>(null);
+	const sheetRef = useRef<BottomSheet>(null);
+	
 	const draw = useDrawCircle();
 	const drawSquare = useDrawSquare();
 	const { select } = useFeatureDeletion();
 	const offline = useOfflineMaps();
+	const { isAuthenticated, currentUser, logout } = useTak();
+	const router = useRouter();
+	const insets = useSafeAreaInsets();
+	
+	const snapPoints = useMemo(() => ["32%", "55%", "90%"], []);
+	const [bottomSheetIndex, setBottomSheetIndex] = useState(2);
+	const isBottomSheetExpanded = bottomSheetIndex > -1;
 
-	const sheetRef = useRef<BottomSheet>(null);
+	// Redirect to login if not authenticated (with delay to ensure layout is mounted)
+	useEffect(() => {
+		if (!isAuthenticated) {
+			// Use setTimeout to ensure navigation happens after layout mount
+			const timer = setTimeout(() => {
+				router.replace('/login');
+			}, 100);
+			return () => clearTimeout(timer);
+		}
+	}, [isAuthenticated, router]);
+
+	// Show loading or redirect while checking authentication
+	if (!isAuthenticated) {
+		return (
+			<View style={styles.loadingContainer}>
+				<Text style={styles.loadingText}>Checking authentication...</Text>
+			</View>
+		);
+	}
 
 	const handleCameraPress = () => {
 		router.push("/camera" as never);
 	};
-	const snapPoints = useMemo(() => ["32%", "55%", "90%"], []);
-	const [bottomSheetIndex, setBottomSheetIndex] = useState(2);
-	const isBottomSheetExpanded = bottomSheetIndex > -1;
 
 	const handleSelect = (action: any) => {
 		setVisible(false);
@@ -254,6 +280,7 @@ export default function App() {
 				<Toolbar
 					onAccountPress={() => setAccountMenuVisible((prev) => !prev)}
 					onCameraPress={handleCameraPress}
+					onLogoutPress={logout}
 				/>
 			</SafeAreaView>
 
@@ -455,5 +482,15 @@ const styles = StyleSheet.create({
 		height: 4,
 		borderRadius: 2,
 		backgroundColor: "#626A6F",
+	},
+	loadingContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: '#1a1d21',
+	},
+	loadingText: {
+		color: '#ffffff',
+		fontSize: 16,
 	},
 });

@@ -8,9 +8,10 @@ type ToolbarProps = {
 	style?: ViewStyle;
 	onAccountPress?: (event: GestureResponderEvent) => void;
 	onCameraPress?: (event: GestureResponderEvent) => void;
+	onLogoutPress?: (event: GestureResponderEvent) => void;
 };
 
-export default function Toolbar({ style, onAccountPress, onCameraPress }: ToolbarProps) {
+export default function Toolbar({ style, onAccountPress, onCameraPress, onLogoutPress }: ToolbarProps) {
 	const [showUtilityPills, setShowUtilityPills] = useState(true);
 
 	return (
@@ -26,6 +27,13 @@ export default function Toolbar({ style, onAccountPress, onCameraPress }: Toolba
 				accessibilityLabel="Open account menu"
 				testID="toolbar-account-button"
 			/>
+				{onLogoutPress && (
+					<ToolbarPill
+						iconComponent={<Feather name="log-out" size={18} color="#FFFFFF" />}
+						onPress={onLogoutPress}
+						accessibilityLabel="Logout"
+					/>
+				)}
 		</View>
 		<ToolbarPill
 			icon={require("@assets/images/eye-icon.png")}
@@ -38,7 +46,6 @@ export default function Toolbar({ style, onAccountPress, onCameraPress }: Toolba
 					iconComponent={<Feather name="camera" size={20} color="#FFFFFF" />}
 					onPress={onCameraPress}
 					accessibilityLabel="Open camera"
-					ariaHint="Launches the camera capture workflow"
 				/>
 				<ToolbarPill icon={require("@assets/images/group-chat.png")} text="Chat" />
 			</>
@@ -60,6 +67,8 @@ const styles = StyleSheet.create({
 	iconsContainer: {
 		flexDirection: "row",
 		justifyContent: "flex-start",
+		alignItems: "center",
+		gap: 8,
 	},
 	transparentButton: {
 		backgroundColor: "transparent",
