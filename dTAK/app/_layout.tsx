@@ -18,6 +18,7 @@ export default function RootLayout() {
 								headerShown: false,
 							}}>
 							<Stack.Screen name="index" />
+							<Stack.Screen name="onboarding/index" />
 							<Stack.Screen name="camera/index" />
 							<Stack.Screen name="camera/preview" />
 							<Stack.Screen name="camera/edit" />

@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,9 +13,15 @@ type Props = {
 };
 
 export default function AccountMenu({ visible, onClose }: Props) {
+	const router = useRouter();
 	const [renderDrawer, setRenderDrawer] = useState(visible);
 	const translateX = useRef(new Animated.Value(visible ? 0 : -DRAWER_WIDTH)).current;
 	const backdropOpacity = useRef(new Animated.Value(visible ? 0.6 : 0)).current;
+
+	const handleNavigateToOnboarding = () => {
+		onClose();
+		router.push("/onboarding" as never);
+	};
 
 	useEffect(() => {
 		if (visible) {
@@ -98,12 +105,17 @@ export default function AccountMenu({ visible, onClose }: Props) {
 
 					<View style={styles.section}>
 						<Text style={styles.sectionTitle}>Quick Actions</Text>
-						<View style={styles.placeholderCard}>
-							<Text style={styles.placeholderTitle}>Coming soon</Text>
+						<Pressable
+							style={({ pressed }) => [styles.placeholderCard, pressed && styles.placeholderCardPressed]}
+							onPress={handleNavigateToOnboarding}
+							accessibilityRole="button"
+							accessibilityLabel="Open onboarding demo"
+							testID="account-menu-onboarding">
+							<Text style={styles.placeholderTitle}>View onboarding demo</Text>
 							<Text style={styles.placeholderDescription}>
-								Profile options and mission tools will appear here.
+								Walk through the secure sign-up and verification flow.
 							</Text>
-						</View>
+						</Pressable>
 					</View>
 				</AnimatedSafeAreaView>
 
@@ -210,6 +222,9 @@ const styles = StyleSheet.create({
 		padding: 20,
 		backgroundColor: "rgba(148, 163, 184, 0.08)",
 	},
+	placeholderCardPressed: {
+		backgroundColor: "rgba(30, 41, 59, 0.6)",
+	},
 	placeholderTitle: {
 		color: "#f8fafc",
 		fontSize: 16,
@@ -229,4 +244,3 @@ const styles = StyleSheet.create({
 		backgroundColor: "rgba(15, 23, 42, 0.7)",
 	},
 });
-

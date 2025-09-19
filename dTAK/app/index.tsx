@@ -1,4 +1,5 @@
 import AccountMenu from "@components/AccountMenu";
+import AppSplash from "@components/AppSplash";
 import MapsSection from "@components/MapsSection";
 import PluginsSection from "@components/PluginsSection";
 import Toolbar from "@components/Toolbar";
@@ -44,6 +45,7 @@ import type { BBox } from "../features/offline/tiles";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { useMarkers } from "../features/markers/state/MarkersProvider";
+import { isOnboardingComplete } from "../features/onboarding/storage";
 
 const BOTTOM_SHEET_BACKGROUND = "#26292B";
 
@@ -81,6 +83,7 @@ const mapConfigFor = (id: string) => mapConfigurations[id as keyof typeof mapCon
 export default function App() {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
+	const [shouldRenderHome, setShouldRenderHome] = useState(false);
 	const [visible, setVisible] = useState(false);
 	const [anchor, setAnchor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [coordinate, setCoordinate] = useState<[number, number] | undefined>(undefined);
@@ -111,6 +114,23 @@ export default function App() {
 	const [cameraZoom, setCameraZoom] = useState(mapConfigFor("new-york").zoomLevel);
 
 	const sheetRef = useRef<BottomSheet>(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			const completed = await isOnboardingComplete();
+			if (!completed) {
+				router.replace("/onboarding" as never);
+				return;
+			}
+			if (!cancelled) {
+				setShouldRenderHome(true);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [router]);
 
 	useEffect(() => {
 		(async () => {
@@ -463,6 +483,10 @@ export default function App() {
 			return null;
 		}
 	};
+
+	if (!shouldRenderHome) {
+		return <AppSplash />;
+	}
 
 	return (
 		<View style={styles.page}>

@@ -5,6 +5,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/onboarding/dtak-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050608",
+      "dark": {
+        "image": "./assets/onboarding/dtak-logo.png",
+        "backgroundColor": "#050608"
+      }
+    },
     "scheme": "dtak",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -29,19 +38,7 @@
     },
     "plugins": [
       "@maplibre/maplibre-react-native",
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ]
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true,
