@@ -22,14 +22,13 @@ import React, { useMemo, useRef, useState } from "react";
 import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
-import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 import { RadialMenu } from "../features/map/components/RadialMenu";
 import { CircleDetailsModal } from "../features/map/components/CircleDetailsModal";
 import { SquareDetailsModal } from "../features/map/components/SquareDetailsModal";
+import { GridDetailsModal } from "../features/map/components/GridDetailsModal";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useDrawSquare } from "../features/map/hooks/useDrawSquare";
 import { useDrawGrid } from "../features/map/hooks/useDrawGrid";
-import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
 import {
 	MarkerCreationOverlay,
 	type MarkerCreationOverlayHandle,
@@ -86,7 +85,6 @@ export default function App() {
 	const draw = useDrawCircle();
 	const drawSquare = useDrawSquare();
 	const drawGrid = useDrawGrid();
-	const { select } = useFeatureDeletion();
 	const offline = useOfflineMaps();
 	const { state, dispatch } = useMarkers();
 	const markerCreationRef = useRef<MarkerCreationOverlayHandle | null>(null);
@@ -94,6 +92,8 @@ export default function App() {
 	const [viewCircleId, setViewCircleId] = useState<string | undefined>(undefined);
 	const [createSquareId, setCreateSquareId] = useState<string | undefined>(undefined);
 	const [viewSquareId, setViewSquareId] = useState<string | undefined>(undefined);
+	const [createGridId, setCreateGridId] = useState<string | undefined>(undefined);
+	const [viewGridId, setViewGridId] = useState<string | undefined>(undefined);
 
 	const sheetRef = useRef<BottomSheet>(null);
 
@@ -165,38 +165,6 @@ export default function App() {
 		}
 
 		if (Array.isArray(coord) && coord.length >= 2) {
-			const square = drawSquare.findSquareAtCoordinate([coord[0], coord[1]]);
-			if (square) {
-				select({
-					id: (square.properties as any).id,
-					type: "square",
-					delete: () => drawSquare.removeSquareById((square.properties as any).id),
-				});
-				setVisible(false);
-				return;
-			}
-			// Check for grid near the press coordinate
-			const grid = drawGrid.findGridAtCoordinate([coord[0], coord[1]]);
-			if (grid) {
-				select({
-					id: (grid.properties as any).id,
-					type: "grid",
-					delete: () => drawGrid.removeGridById((grid.properties as any).id),
-				});
-				setVisible(false);
-				return;
-			}
-			const circle = draw.findCircleAtCoordinate([coord[0], coord[1]]);
-			if (circle) {
-				select({
-					id: circle.properties.id,
-					type: "circle",
-					delete: () => draw.removeCircleById(circle.properties.id),
-				});
-
-				setVisible(false);
-				return;
-			}
 			setCoordinate([coord[0], coord[1]]);
 		} else {
 			setCoordinate(undefined);
@@ -372,7 +340,15 @@ export default function App() {
 				)}
 				{/* Persisted grids */}
 				{drawGrid.sources.grids && drawGrid.sources.grids.features.length > 0 && (
-					<ShapeSource id="gridsSource" shape={drawGrid.sources.grids}>
+					<ShapeSource
+						id="gridsSource"
+						shape={drawGrid.sources.grids}
+						onPress={(e: any) => {
+							const id = e?.features?.[0]?.properties?.id as string | undefined;
+							if (!id) return;
+							setViewGridId(id);
+						}}
+					>
 						<LineLayer
 							id="gridsLine"
 							style={{
@@ -386,13 +362,13 @@ export default function App() {
 					</ShapeSource>
 				)}
 				{/* Markers overlay */}
-				<MarkersOverlay />
-				{/* Marker creation overlay with preview + modal (must be inside MapView) */}
-				<MarkerCreationOverlay ref={markerCreationRef} />
-			</MapView>
+                <MarkersOverlay />
+                {/* Marker creation overlay with preview + modal (must be inside MapView) */}
+                <MarkerCreationOverlay ref={markerCreationRef} />
+            </MapView>
 
-			{/* Toolbar fixed at the top */}
-			<SafeAreaView style={styles.toolbarContainer}>
+            {/* Toolbar fixed at the top */}
+            <SafeAreaView style={styles.toolbarContainer}>
 				<Toolbar
 					onAccountPress={() => setAccountMenuVisible((prev) => !prev)}
 					onCameraPress={handleCameraPress}
@@ -505,8 +481,7 @@ export default function App() {
 				]}
 			/>
 
-			{/* Delete overlay */}
-			<DeleteOverlay />
+			{/* Delete overlay removed: deletion now handled via per-shape modals */}
 
 			{/* Radial menu */}
 			<RadialMenu
@@ -518,13 +493,13 @@ export default function App() {
 
 			{/* Circle details - create mode */}
 			<CircleDetailsModal
-				visible={!!createCircleId}
-				mode="create"
+				visible={!!createCircleId}				mode="create"
 				onCancel={() => {
 					if (createCircleId) draw.removeCircleById(createCircleId);
 					setCreateCircleId(undefined);
 				}}
-				onSave={({ title, description }) => {
+				onSave={(payload: { title?: string; description?: string }) => {
+					const { title, description } = payload;
 					if (createCircleId) {
 						draw.updateCircleById(createCircleId, { title, description });
 					}
@@ -534,73 +509,118 @@ export default function App() {
 
 			{/* Circle details - view mode */}
 			{(() => {
-				const viewCircle = viewCircleId ? draw.getCircleById(viewCircleId) : undefined;
-				return (
-					<CircleDetailsModal
-						visible={!!viewCircle}
-						mode="view"
-						circle={
-							viewCircle
-								? {
-									title: (viewCircle.properties as any)?.title,
-									description: (viewCircle.properties as any)?.description,
-									createdAt: (viewCircle.properties as any)?.createdAt,
-								}
-								: undefined
-						}
-						onCancel={() => setViewCircleId(undefined)}
-						onDelete={() => {
-							if (viewCircleId) {
-								draw.removeCircleById(viewCircleId);
-							}
-							setViewCircleId(undefined);
-						}}
-					/>
-				);
-			})()}
+			  const viewCircle = viewCircleId ? draw.getCircleById(viewCircleId) : undefined;
+			  return (
+			    <CircleDetailsModal
+      visible={!!viewCircle}
+      mode="view"
+      circle={
+        viewCircle
+          ? {
+              title: (viewCircle.properties as any)?.title,
+              description: (viewCircle.properties as any)?.description,
+              createdAt: (viewCircle.properties as any)?.createdAt,
+            }
+          : undefined
+      }
+      onCancel={() => setViewCircleId(undefined)}
+      onDelete={() => {
+        if (viewCircleId) {
+          draw.removeCircleById(viewCircleId);
+        }
+        setViewCircleId(undefined);
+      }}
+    />
+  );
+})()}
 
 			{/* Square details - create mode */}
 			<SquareDetailsModal
-				visible={!!createSquareId}
-				mode="create"
-				onCancel={() => {
-					if (createSquareId) drawSquare.removeSquareById(createSquareId);
-					setCreateSquareId(undefined);
-				}}
-				onSave={({ title, description }) => {
-					if (createSquareId) {
-						drawSquare.updateSquareById(createSquareId, { title, description });
-					}
-					setCreateSquareId(undefined);
-				}}
-			/>
+  visible={!!createSquareId}
+  mode="create"
+  onCancel={() => {
+    if (createSquareId) drawSquare.removeSquareById(createSquareId);
+    setCreateSquareId(undefined);
+  }}
+  onSave={(payload: { title?: string; description?: string }) => {
+    const { title, description } = payload;
+    if (createSquareId) {
+      drawSquare.updateSquareById(createSquareId, { title, description });
+    }
+    setCreateSquareId(undefined);
+  }}
+/>
 
 			{/* Square details - view mode */}
 			{(() => {
-				const viewSquare = viewSquareId ? drawSquare.getSquareById(viewSquareId) : undefined;
-				return (
-					<SquareDetailsModal
-						visible={!!viewSquare}
-						mode="view"
-						square={
-							viewSquare
-								? {
-									title: (viewSquare.properties as any)?.title,
-									description: (viewSquare.properties as any)?.description,
-									createdAt: (viewSquare.properties as any)?.createdAt,
-								}
-								: undefined
-						}
-						onCancel={() => setViewSquareId(undefined)}
-						onDelete={() => {
-							if (viewSquareId) {
-								drawSquare.removeSquareById(viewSquareId);
-							}
-							setViewSquareId(undefined);
-						}}
-					/>
-				);
-			})()}
+  const viewSquare = viewSquareId ? drawSquare.getSquareById(viewSquareId) : undefined;
+  return (
+    <SquareDetailsModal
+      visible={!!viewSquare}
+      mode="view"
+      square={
+        viewSquare
+          ? {
+              title: (viewSquare.properties as any)?.title,
+              description: (viewSquare.properties as any)?.description,
+              createdAt: (viewSquare.properties as any)?.createdAt,
+            }
+          : undefined
+      }
+      onCancel={() => setViewSquareId(undefined)}
+      onDelete={() => {
+        if (viewSquareId) {
+          drawSquare.removeSquareById(viewSquareId);
+        }
+        setViewSquareId(undefined);
+      }}
+    />
+  );
+})()}
+
+			{/* Grid details - create mode */}
+			<GridDetailsModal
+  visible={!!createGridId}
+  mode="create"
+  onCancel={() => {
+    if (createGridId) drawGrid.removeGridById(createGridId);
+    setCreateGridId(undefined);
+  }}
+  onSave={(payload: { title?: string; description?: string }) => {
+    const { title, description } = payload;
+    if (createGridId) {
+      drawGrid.updateGridById(createGridId, { title, description });
+    }
+    setCreateGridId(undefined);
+  }}
+/>
+
+			{/* Grid details - view mode */}
+			{(() => {
+  const viewGrid = viewGridId ? drawGrid.getGridById(viewGridId) : undefined;
+  return (
+    <GridDetailsModal
+      visible={!!viewGrid}
+      mode="view"
+      grid={
+        viewGrid
+          ? {
+              title: (viewGrid.properties as any)?.title,
+              description: (viewGrid.properties as any)?.description,
+              createdAt: (viewGrid.properties as any)?.createdAt,
+            }
+          : undefined
+      }
+      onCancel={() => setViewGridId(undefined)}
+      onDelete={() => {
+        if (viewGridId) {
+          drawGrid.removeGridById(viewGridId);
+        }
+        setViewGridId(undefined);
+      }}
+    />
+  );
+})()}
 
 			<AccountMenu
 				visible={accountMenuVisible}
@@ -664,9 +684,10 @@ export default function App() {
 						const { locationX, locationY } = e.nativeEvent;
 						drawGrid.onDrag([locationX, locationY]);
 					}}
-					onResponderRelease={(e: GestureResponderEvent) => {
+					onResponderRelease={async (e: GestureResponderEvent) => {
 						const { locationX, locationY } = e.nativeEvent;
-						drawGrid.onRelease([locationX, locationY]);
+						const id = await drawGrid.onRelease([locationX, locationY]);
+						if (id) setCreateGridId(id);
 					}}
 				/>
 			)}

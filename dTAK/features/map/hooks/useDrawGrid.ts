@@ -14,6 +14,9 @@ export type GridFeature = GeoJSON.Feature<
     halfDiagonal: number;
     units: "meters";
     cellsPerSide: number;
+    title?: string;
+    description?: string;
+    createdAt?: number;
   }
 >;
 
@@ -83,23 +86,25 @@ export function useDrawGrid(cellsPerSide: number = 6) {
   );
 
   const onRelease = useCallback(
-    async (point?: [number, number]) => {
-      if (mode !== "DRAW_GRID" || !center) return;
+    async (point?: [number, number]): Promise<string | undefined> => {
+      if (mode !== "DRAW_GRID" || !center) return undefined;
       let finalHalf = halfDiagonal ?? 0;
       if (point && mapRef.current && finalHalf === 0) {
         const coord = await mapRef.current.getCoordinateFromView(point);
         finalHalf = metersBetween(center, [coord[0], coord[1]]);
       }
       const grid = approximateGrid(center, Math.max(0, finalHalf), cellsPerSide);
+      const id = generateGridId();
       const feature: GridFeature = {
         type: "Feature",
         geometry: grid,
         properties: {
-          id: generateGridId(),
+          id,
           center,
           halfDiagonal: Math.max(0, finalHalf),
           units: "meters",
           cellsPerSide,
+          createdAt: Date.now(),
         },
       };
       setGrids((prev) => ({
@@ -110,6 +115,7 @@ export function useDrawGrid(cellsPerSide: number = 6) {
       setCenter(undefined);
       setHalfDiagonal(undefined);
       setMode("DEFAULT");
+      return id;
     },
     [mode, center, halfDiagonal, cellsPerSide]
   );
@@ -127,6 +133,32 @@ export function useDrawGrid(cellsPerSide: number = 6) {
       preview,
     }),
     [grids, preview]
+  );
+
+  const updateGridById = useCallback(
+    (id: string, patch: Partial<{ title: string; description: string }>) => {
+      setGrids((prev) => ({
+        type: "FeatureCollection",
+        features: prev.features.map((f) => {
+          const props = (f.properties as any) || {};
+          if (props.id === id) {
+            return {
+              ...f,
+              properties: { ...(f.properties as any), ...patch },
+            } as any;
+          }
+          return f;
+        }),
+      }));
+    },
+    []
+  );
+
+  const getGridById = useCallback(
+    (id: string) => {
+      return (grids.features as GridFeature[]).find((f) => f.properties.id === id);
+    },
+    [grids]
   );
 
   const findGridAtCoordinate = useCallback(
@@ -192,5 +224,7 @@ export function useDrawGrid(cellsPerSide: number = 6) {
     mapRef,
     removeGridById,
     findGridAtCoordinate,
+    updateGridById,
+    getGridById,
   } as const;
 }
