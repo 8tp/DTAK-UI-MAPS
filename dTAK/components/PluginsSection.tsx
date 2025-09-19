@@ -58,7 +58,7 @@ const defaultPlugins: PluginData[] = [
 		id: "chat",
 		name: "CHAT",
 		icon: require("@assets/images/group-chat.png"),
-	}
+	},
 ];
 
 const styles = StyleSheet.create({

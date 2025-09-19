@@ -30,7 +30,7 @@ const MAX_WIDTH = 1600;
 const CameraEditScreen = () => {
   const router = useRouter();
   const viewShotRef = useRef<ViewShot | null>(null);
-  const { capturedPhoto, annotations, addAnnotation, setAnnotations, undoLastAnnotation } = useCameraSession();
+  const { capturedPhoto, annotations, addAnnotation, setAnnotations, undoLastAnnotation, resetSession } = useCameraSession();
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number } | null>(null);
   const [activeTool, setActiveTool] = useState<"circle" | "arrow" | "text">("circle");
   const [pendingPoint, setPendingPoint] = useState<NormalizedPoint | null>(null);
@@ -257,6 +257,7 @@ const CameraEditScreen = () => {
 
       await MediaLibrary.saveToLibraryAsync(finalUri);
       Alert.alert("Saved", "Annotated photo saved to camera roll.");
+      resetSession();
       router.replace("/" as never);
     } catch (error) {
       console.error("Failed to save annotated photo", error);
@@ -287,7 +288,12 @@ const CameraEditScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.secondaryButton}>
+        <TouchableOpacity
+          onPress={() => {
+            resetSession();
+            router.back();
+          }}
+          style={styles.secondaryButton}>
           <Text style={styles.secondaryButtonText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Annotate Photo</Text>

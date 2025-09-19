@@ -22,7 +22,7 @@ import {
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
 import { RadialMenu } from "../features/map/components/RadialMenu";
@@ -76,6 +76,8 @@ const mapConfigurations = {
 	},
 };
 
+const mapConfigFor = (id: string) => mapConfigurations[id as keyof typeof mapConfigurations];
+
 export default function App() {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
@@ -101,28 +103,57 @@ export default function App() {
 	const [viewSquareId, setViewSquareId] = useState<string | undefined>(undefined);
 	const [createGridId, setCreateGridId] = useState<string | undefined>(undefined);
 	const [viewGridId, setViewGridId] = useState<string | undefined>(undefined);
-    const [createModalVisible, setCreateModalVisible] = useState(false);
-    const [createIconId, setCreateIconId] = useState<string>("marker-default-pin");
-    const [pendingCreateCoord, setPendingCreateCoord] = useState<[number, number] | undefined>(undefined);
-    const [viewMarkerId, setViewMarkerId] = useState<string | undefined>(undefined);
+	const [createModalVisible, setCreateModalVisible] = useState(false);
+	const [createIconId, setCreateIconId] = useState<string>("marker-default-pin");
+	const [pendingCreateCoord, setPendingCreateCoord] = useState<[number, number] | undefined>(undefined);
+	const [viewMarkerId, setViewMarkerId] = useState<string | undefined>(undefined);
+	const [cameraCenter, setCameraCenter] = useState<[number, number]>(mapConfigFor("new-york").centerCoordinate);
+	const [cameraZoom, setCameraZoom] = useState(mapConfigFor("new-york").zoomLevel);
 
 	const sheetRef = useRef<BottomSheet>(null);
 
-	React.useEffect(() => {
+	useEffect(() => {
 		(async () => {
 			try {
 				await Location.requestForegroundPermissionsAsync();
-			} catch {}
+			} catch { }
 		})();
 	}, []);
+
+	useEffect(() => {
+		const config = mapConfigFor(selectedMap);
+		setCameraCenter(config.centerCoordinate);
+		setCameraZoom(config.zoomLevel);
+	}, [selectedMap]);
 
 	const handleCameraPress = () => {
 		router.push("/camera" as never);
 	};
+
+	const handleCenterOnUser = useCallback(async () => {
+		try {
+			const { status } = await Location.requestForegroundPermissionsAsync();
+			if (status !== Location.PermissionStatus.GRANTED) {
+				Alert.alert(
+					"Location permission required",
+					"Enable location access in settings to center the map on your position."
+				);
+				return;
+			}
+
+			const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+			const { longitude, latitude } = location.coords;
+			setCameraCenter([longitude, latitude]);
+			setCameraZoom((current) => (current < 13 ? 13 : current));
+		} catch (error) {
+			console.error("Failed to center map on user location", error);
+			Alert.alert("Unable to locate", "We couldn't determine your current position.");
+		}
+	}, []);
 	const snapPoints = useMemo(() => ["32%", "55%", "90%"], []);
 	const [bottomSheetIndex, setBottomSheetIndex] = useState(2);
 	const isBottomSheetExpanded = bottomSheetIndex > -1;
-	const ackTimeouts = useRef<Record<string, Array<ReturnType<typeof setTimeout>>>>({});
+	const ackTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>[]>>({});
 	const chatThreadsRef = useRef<ChatThread[]>([]);
 
 	const currentUser = useMemo<MinimalUser>(
@@ -441,14 +472,12 @@ export default function App() {
 				style={styles.map}
 				onLongPress={onMapLongPress}
 				{...({ styleURL: "https://demotiles.maplibre.org/style.json" } as any)}>
+				<UserLocation showsUserHeadingIndicator />
 				<Camera
-					zoomLevel={
-						mapConfigurations[selectedMap as keyof typeof mapConfigurations].zoomLevel
-					}
-					centerCoordinate={
-						mapConfigurations[selectedMap as keyof typeof mapConfigurations]
-							.centerCoordinate
-					}
+					zoomLevel={cameraZoom}
+					centerCoordinate={cameraCenter}
+					animationDuration={750}
+					animationMode="flyTo"
 				/>
 				<RasterSource
 					id="satelliteSource"
@@ -600,10 +629,10 @@ export default function App() {
 				onSave={({ title, description, iconId }) => {
 					if (!pendingCreateCoord) return;
 					const [lon, lat] = pendingCreateCoord;
-						markersDispatch({ type: "addMarker", payload: { lon, lat, meta: { title, description, iconId } } });
-						setCreateModalVisible(false);
-						setPendingCreateCoord(undefined);
-						markerCreationRef.current?.cancel();
+					markersDispatch({ type: "addMarker", payload: { lon, lat, meta: { title, description, iconId } } });
+					setCreateModalVisible(false);
+					setPendingCreateCoord(undefined);
+					markerCreationRef.current?.cancel();
 				}}
 			/>
 
@@ -621,12 +650,13 @@ export default function App() {
 				marker={viewMarkerId ? (() => { const m = markersState.markers[viewMarkerId]; return m ? { title: m.title, description: m.description, iconId: m.iconId, createdAt: m.createdAt } : undefined; })() : undefined}
 			/>
 
-            {/* Toolbar fixed at the top */}
-            <SafeAreaView style={styles.toolbarContainer}>
+			{/* Toolbar fixed at the top */}
+			<SafeAreaView style={styles.toolbarContainer}>
 				<Toolbar
 					onAccountPress={() => setAccountMenuVisible((prev) => !prev)}
 					onChatPress={handleChatPress}
 					onCameraPress={handleCameraPress}
+					onCenterPress={handleCenterOnUser}
 				/>
 			</SafeAreaView>
 
@@ -695,19 +725,19 @@ export default function App() {
 										selectedMap as keyof typeof mapConfigurations
 									].centerCoordinate
 										? [
-												mapConfigurations[
-													selectedMap as keyof typeof mapConfigurations
-												].centerCoordinate[0] - 0.05,
-												mapConfigurations[
-													selectedMap as keyof typeof mapConfigurations
-												].centerCoordinate[1] - 0.05,
-												mapConfigurations[
-													selectedMap as keyof typeof mapConfigurations
-												].centerCoordinate[0] + 0.05,
-												mapConfigurations[
-													selectedMap as keyof typeof mapConfigurations
-												].centerCoordinate[1] + 0.05,
-										  ]
+											mapConfigurations[
+												selectedMap as keyof typeof mapConfigurations
+											].centerCoordinate[0] - 0.05,
+											mapConfigurations[
+												selectedMap as keyof typeof mapConfigurations
+											].centerCoordinate[1] - 0.05,
+											mapConfigurations[
+												selectedMap as keyof typeof mapConfigurations
+											].centerCoordinate[0] + 0.05,
+											mapConfigurations[
+												selectedMap as keyof typeof mapConfigurations
+											].centerCoordinate[1] + 0.05,
+										]
 										: [-86.35, 32.3, -86.25, 32.4]) as BBox)
 								}
 								remoteTemplate={remoteTemplate}
@@ -748,7 +778,7 @@ export default function App() {
 
 			{/* Circle details - create mode */}
 			<CircleDetailsModal
-				visible={!!createCircleId}				mode="create"
+				visible={!!createCircleId} mode="create"
 				onCancel={() => {
 					if (createCircleId) draw.removeCircleById(createCircleId);
 					setCreateCircleId(undefined);
@@ -764,118 +794,118 @@ export default function App() {
 
 			{/* Circle details - view mode */}
 			{(() => {
-			  const viewCircle = viewCircleId ? draw.getCircleById(viewCircleId) : undefined;
-			  return (
-			    <CircleDetailsModal
-      visible={!!viewCircle}
-      mode="view"
-      circle={
-        viewCircle
-          ? {
-              title: (viewCircle.properties as any)?.title,
-              description: (viewCircle.properties as any)?.description,
-              createdAt: (viewCircle.properties as any)?.createdAt,
-            }
-          : undefined
-      }
-      onCancel={() => setViewCircleId(undefined)}
-      onDelete={() => {
-        if (viewCircleId) {
-          draw.removeCircleById(viewCircleId);
-        }
-        setViewCircleId(undefined);
-      }}
-    />
-  );
-})()}
+				const viewCircle = viewCircleId ? draw.getCircleById(viewCircleId) : undefined;
+				return (
+					<CircleDetailsModal
+						visible={!!viewCircle}
+						mode="view"
+						circle={
+							viewCircle
+								? {
+									title: (viewCircle.properties as any)?.title,
+									description: (viewCircle.properties as any)?.description,
+									createdAt: (viewCircle.properties as any)?.createdAt,
+								}
+								: undefined
+						}
+						onCancel={() => setViewCircleId(undefined)}
+						onDelete={() => {
+							if (viewCircleId) {
+								draw.removeCircleById(viewCircleId);
+							}
+							setViewCircleId(undefined);
+						}}
+					/>
+				);
+			})()}
 
 			{/* Square details - create mode */}
 			<SquareDetailsModal
-  visible={!!createSquareId}
-  mode="create"
-  onCancel={() => {
-    if (createSquareId) drawSquare.removeSquareById(createSquareId);
-    setCreateSquareId(undefined);
-  }}
-  onSave={(payload: { title?: string; description?: string }) => {
-    const { title, description } = payload;
-    if (createSquareId) {
-      drawSquare.updateSquareById(createSquareId, { title, description });
-    }
-    setCreateSquareId(undefined);
-  }}
-/>
+				visible={!!createSquareId}
+				mode="create"
+				onCancel={() => {
+					if (createSquareId) drawSquare.removeSquareById(createSquareId);
+					setCreateSquareId(undefined);
+				}}
+				onSave={(payload: { title?: string; description?: string }) => {
+					const { title, description } = payload;
+					if (createSquareId) {
+						drawSquare.updateSquareById(createSquareId, { title, description });
+					}
+					setCreateSquareId(undefined);
+				}}
+			/>
 
 			{/* Square details - view mode */}
 			{(() => {
-  const viewSquare = viewSquareId ? drawSquare.getSquareById(viewSquareId) : undefined;
-  return (
-    <SquareDetailsModal
-      visible={!!viewSquare}
-      mode="view"
-      square={
-        viewSquare
-          ? {
-              title: (viewSquare.properties as any)?.title,
-              description: (viewSquare.properties as any)?.description,
-              createdAt: (viewSquare.properties as any)?.createdAt,
-            }
-          : undefined
-      }
-      onCancel={() => setViewSquareId(undefined)}
-      onDelete={() => {
-        if (viewSquareId) {
-          drawSquare.removeSquareById(viewSquareId);
-        }
-        setViewSquareId(undefined);
-      }}
-    />
-  );
-})()}
+				const viewSquare = viewSquareId ? drawSquare.getSquareById(viewSquareId) : undefined;
+				return (
+					<SquareDetailsModal
+						visible={!!viewSquare}
+						mode="view"
+						square={
+							viewSquare
+								? {
+									title: (viewSquare.properties as any)?.title,
+									description: (viewSquare.properties as any)?.description,
+									createdAt: (viewSquare.properties as any)?.createdAt,
+								}
+								: undefined
+						}
+						onCancel={() => setViewSquareId(undefined)}
+						onDelete={() => {
+							if (viewSquareId) {
+								drawSquare.removeSquareById(viewSquareId);
+							}
+							setViewSquareId(undefined);
+						}}
+					/>
+				);
+			})()}
 
 			{/* Grid details - create mode */}
 			<GridDetailsModal
-  visible={!!createGridId}
-  mode="create"
-  onCancel={() => {
-    if (createGridId) drawGrid.removeGridById(createGridId);
-    setCreateGridId(undefined);
-  }}
-  onSave={(payload: { title?: string; description?: string }) => {
-    const { title, description } = payload;
-    if (createGridId) {
-      drawGrid.updateGridById(createGridId, { title, description });
-    }
-    setCreateGridId(undefined);
-  }}
-/>
+				visible={!!createGridId}
+				mode="create"
+				onCancel={() => {
+					if (createGridId) drawGrid.removeGridById(createGridId);
+					setCreateGridId(undefined);
+				}}
+				onSave={(payload: { title?: string; description?: string }) => {
+					const { title, description } = payload;
+					if (createGridId) {
+						drawGrid.updateGridById(createGridId, { title, description });
+					}
+					setCreateGridId(undefined);
+				}}
+			/>
 
 			{/* Grid details - view mode */}
 			{(() => {
-  const viewGrid = viewGridId ? drawGrid.getGridById(viewGridId) : undefined;
-  return (
-    <GridDetailsModal
-      visible={!!viewGrid}
-      mode="view"
-      grid={
-        viewGrid
-          ? {
-              title: (viewGrid.properties as any)?.title,
-              description: (viewGrid.properties as any)?.description,
-              createdAt: (viewGrid.properties as any)?.createdAt,
-            }
-          : undefined
-      }
-      onCancel={() => setViewGridId(undefined)}
-      onDelete={() => {
-        if (viewGridId) {
-          drawGrid.removeGridById(viewGridId);
-        }
-        setViewGridId(undefined);
-      }}
-    />
-  );
-})()}
+				const viewGrid = viewGridId ? drawGrid.getGridById(viewGridId) : undefined;
+				return (
+					<GridDetailsModal
+						visible={!!viewGrid}
+						mode="view"
+						grid={
+							viewGrid
+								? {
+									title: (viewGrid.properties as any)?.title,
+									description: (viewGrid.properties as any)?.description,
+									createdAt: (viewGrid.properties as any)?.createdAt,
+								}
+								: undefined
+						}
+						onCancel={() => setViewGridId(undefined)}
+						onDelete={() => {
+							if (viewGridId) {
+								drawGrid.removeGridById(viewGridId);
+							}
+							setViewGridId(undefined);
+						}}
+					/>
+				);
+			})()}
 
 			<AccountMenu
 				visible={accountMenuVisible}
