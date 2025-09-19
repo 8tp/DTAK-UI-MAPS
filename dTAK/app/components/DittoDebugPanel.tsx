@@ -14,6 +14,15 @@ import { DittoService } from '../../ditto/services/DittoService';
 
 type Peer = { id: string; siteID?: string; info?: any };
 
+// Simple RFC4122 v4 UUID generator (no external deps)
+function uuidv4(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export default function DittoDebugPanel({ onClose }: { onClose: () => void }) {
   const [peers, setPeers] = useState<Peer[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
@@ -42,11 +51,33 @@ export default function DittoDebugPanel({ onClose }: { onClose: () => void }) {
       try {
         sub = await svc.subscribeToCollection('debug_messages', (docs: any[], ev: any) => {
           try {
-            const newDocs = (docs || []).map((d: any) => (d && d.value ? d.value : d));
-            setMessages((s) => [...newDocs, ...s].slice(0, 200));
-          } catch {}
+            const newDocs = (docs || []).map((d: any) => {
+              const payload = d && d.value ? d.value : d || {};
+              // Ensure a stable id exists on the item for React key usage
+              const docId = payload.id || payload._id || payload.key || payload.ts || uuidv4();
+              return { ...payload, id: String(docId) };
+            });
+            setMessages((existing) => {
+              // prepend new docs, dedupe by id and limit length
+              const combined = [...newDocs, ...existing];
+              const seen = new Set();
+              const deduped: any[] = [];
+              for (const m of combined) {
+                if (!m || !m.id) continue;
+                if (seen.has(m.id)) continue;
+                seen.add(m.id);
+                deduped.push(m);
+                if (deduped.length >= 200) break;
+              }
+              return deduped;
+            });
+          } catch (e) {
+            console.warn('Error processing debug_messages subscription', e);
+          }
         });
-      } catch {}
+      } catch (e) {
+        console.warn('Failed to subscribe to debug_messages', e);
+      }
     })();
 
     return () => {
@@ -60,15 +91,29 @@ export default function DittoDebugPanel({ onClose }: { onClose: () => void }) {
     try {
       const svc = DittoService.getInstance();
       const info = await svc.getDeviceInfo();
-      const id = `msg-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  const id = uuidv4();
       const doc = {
+        id,
         from: info.deviceName,
         deviceId: info.deviceId,
         text: payload,
         ts: new Date().toISOString(),
       };
       await svc.upsertDocument('debug_messages', doc, id);
-      setMessages((s) => [doc, ...s].slice(0, 200));
+      setMessages((s) => {
+        // preprend, dedupe by id
+        const combined = [doc, ...s];
+        const seen = new Set();
+        const deduped: any[] = [];
+        for (const m of combined) {
+          if (!m || !m.id) continue;
+          if (seen.has(m.id)) continue;
+          seen.add(m.id);
+          deduped.push(m);
+          if (deduped.length >= 200) break;
+        }
+        return deduped;
+      });
     } catch (err) {
       console.warn('Ditto debug send failed', err);
     }
@@ -119,8 +164,8 @@ export default function DittoDebugPanel({ onClose }: { onClose: () => void }) {
             // messages
             return (
               <View style={styles.msgRow}>
-                <Text style={styles.mono}>{item.ts || ''}</Text>
-                <Text>{item.from}: {item.text}</Text>
+                <Text style={styles.outputText}>{item.ts || ''}</Text>
+                <Text style={styles.outputText}>{item.from}: {item.text}</Text>
               </View>
             );
           }}
@@ -139,6 +184,7 @@ const styles = StyleSheet.create({
   section: { marginTop: 8 },
   sectionTitle: { color: '#9ca3af', marginTop: 8, marginBottom: 4 },
   mono: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', color: '#e5e7eb' },
+  outputText: { color: '#ffffff' },
   row: { paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#111827' },
   input: { backgroundColor: '#fff', padding: 8, borderRadius: 6, marginBottom: 8 },
   msgRow: { paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#0f172a' },
