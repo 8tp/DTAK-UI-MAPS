@@ -21,9 +21,15 @@ import {
 } from "@maplibre/maplibre-react-native";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
+<<<<<<< HEAD
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
+=======
+import React, { useMemo, useRef, useState } from "react";
+import { GestureResponderEvent, Pressable, StyleSheet, Text, View, TouchableOpacity } from "react-native";
+>>>>>>> committing updates for ditto debug panel
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import DittoDebugPanel from './components/DittoDebugPanel';
 import { performAction } from "../features/map/actions/radialActions";
 import { RadialMenu } from "../features/map/components/RadialMenu";
 import { CircleDetailsModal } from "../features/map/components/CircleDetailsModal";
@@ -112,6 +118,7 @@ export default function App() {
 
 	const sheetRef = useRef<BottomSheet>(null);
 		const [showDebug, setShowDebug] = useState(false);
+<<<<<<< HEAD
 
 		// Ensure Ditto initializes early in the app lifecycle when config is present.
 		useEffect(() => {
@@ -161,6 +168,8 @@ export default function App() {
 		setCameraCenter(config.centerCoordinate);
 		setCameraZoom(config.zoomLevel);
 	}, [selectedMap]);
+=======
+>>>>>>> committing updates for ditto debug panel
 
 	const handleCameraPress = () => {
 		router.push("/camera" as never);
@@ -502,6 +511,7 @@ export default function App() {
 
 	return (
 		<View style={styles.page}>
+			{showDebug && <DittoDebugPanel onClose={() => setShowDebug(false)} />}
 			{/* Set a base style URL to ensure proper layer graph and ordering */}
 			<MapView
 				ref={mapRef as any}
@@ -656,6 +666,7 @@ export default function App() {
 				<Text style={{ color: '#fff', fontWeight: '700' }}>DITTO</Text>
 			</TouchableOpacity>
 
+<<<<<<< HEAD
 			{/* Marker Details Modal - Create */}
 			<MarkerDetailsModal
 				visible={createModalVisible}
@@ -694,6 +705,8 @@ export default function App() {
 				}}
 				marker={viewMarkerId ? (() => { const m = markersState.markers[viewMarkerId]; return m ? { title: m.title, description: m.description, iconId: m.iconId, createdAt: m.createdAt } : undefined; })() : undefined}
 			/>
+=======
+>>>>>>> committing updates for ditto debug panel
 
 			{/* Toolbar fixed at the top */}
 			<SafeAreaView style={styles.toolbarContainer}>
@@ -1072,7 +1085,10 @@ const styles = StyleSheet.create({
 	},
 });
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> committing updates for ditto debug panel
 const debugStyles = StyleSheet.create({
 	fab: {
 		position: 'absolute',
@@ -1085,4 +1101,8 @@ const debugStyles = StyleSheet.create({
 		elevation: 6,
 		zIndex: 3000,
 	},
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> committing updates for ditto debug panel
