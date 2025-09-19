@@ -29,7 +29,7 @@ export default function PluginsSection({
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
-				<Text style={styles.title}>Apps</Text>
+				<Text style={styles.title}>Plugins</Text>
 				<TouchableOpacity onPress={onViewMore} style={styles.viewMoreButton}>
 					<Text style={styles.viewMoreText}>View more</Text>
 					<Text style={styles.arrow}>→</Text>
@@ -58,7 +58,7 @@ const defaultPlugins: PluginData[] = [
 		id: "chat",
 		name: "CHAT",
 		icon: require("@assets/images/group-chat.png"),
-	}
+	},
 ];
 
 const styles = StyleSheet.create({
