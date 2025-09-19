@@ -127,25 +127,38 @@ export default function App() {
 
 	const currentUser = useMemo<MinimalUser>(
 		() => ({
-			_id: "operator-1",
-			name: "Operator One",
+			_id: "home-user",
+			name: "Jordan Rivera",
 		}),
 		[],
 	);
 
+	const familyMembers = useMemo(() => {
+		return {
+			spouse: {
+				_id: "chat-family-maya",
+				name: "Maya Rivera",
+			} satisfies MinimalUser,
+			child: {
+				_id: "chat-family-sofia",
+				name: "Sofia Rivera",
+			} satisfies MinimalUser,
+		};
+	}, []);
+
 	const peerDirectory = useMemo(() => {
 		return {
-			alpha: {
-				_id: "operator-2",
-				name: "Alpha Team Lead",
+			familyGroup: {
+				_id: "chat-family",
+				name: "Rivera Family",
 			} satisfies MinimalUser,
-			recon: {
-				_id: "operator-3",
-				name: "Recon Ops",
+			neighbor: {
+				_id: "chat-neighbor",
+				name: "Chris (Neighbor)",
 			} satisfies MinimalUser,
-			intel: {
-				_id: "operator-4",
-				name: "Intel Analyst",
+			emsDispatch: {
+				_id: "chat-ems",
+				name: "City EMS Dispatch",
 			} satisfies MinimalUser,
 		};
 	}, []);
@@ -154,52 +167,76 @@ export default function App() {
 		const now = Date.now();
 		return [
 			{
-				id: "alpha-thread",
-				title: "Alpha Team",
-				peer: peerDirectory.alpha,
+				id: "family-thread",
+				title: "Rivera Family",
+				peer: peerDirectory.familyGroup,
 				messages: [
 					{
-						_id: "alpha-msg-1",
-						text: "Need your overwatch on grid 47B in five.",
-						createdAt: new Date(now - 1000 * 60 * 3),
-						user: peerDirectory.alpha,
+						_id: "family-msg-2",
+						text: "We're unpacking at Grandma's. River Road is already under water, I'll keep the updates coming.",
+						createdAt: new Date(now - 1000 * 60 * 2),
+						user: familyMembers.spouse,
 					},
 					{
-						_id: "alpha-msg-0",
-						text: "Alpha team staged at LZ Bravo, awaiting go order.",
-						createdAt: new Date(now - 1000 * 60 * 12),
-						user: peerDirectory.alpha,
+						_id: "family-msg-1",
+						text: "Grandma says hi! I grabbed the radio from the garage so we have it with us.",
+						createdAt: new Date(now - 1000 * 60 * 4),
+						user: familyMembers.child,
+					},
+					{
+						_id: "family-msg-0",
+						text: "Go-bags are ready. Leaving the house in 15 once the rain stops.",
+						createdAt: new Date(now - 1000 * 60 * 9),
+						user: currentUser,
 					},
 				],
 			},
 			{
-				id: "recon-thread",
-				title: "Recon",
-				peer: peerDirectory.recon,
+				id: "neighbor-thread",
+				title: "Chris (Neighbor)",
+				peer: peerDirectory.neighbor,
 				messages: [
 					{
-						_id: "recon-msg-1",
-						text: "Thermals show two vehicles near the ridge.",
+						_id: "neighbor-msg-1",
+						text: "Water's at the curb. I can help stack sandbags if you need it.",
+						createdAt: new Date(now - 1000 * 60 * 6),
+						user: peerDirectory.neighbor,
+					},
+					{
+						_id: "neighbor-msg-0",
+						text: "Thanks, Chris. Pump is running but the basement drain is backing up.",
+						createdAt: new Date(now - 1000 * 60 * 11),
+						user: currentUser,
+					},
+				],
+			},
+			{
+				id: "ems-thread",
+				title: "EMS Dispatch",
+				peer: peerDirectory.emsDispatch,
+				messages: [
+					{
+						_id: "ems-msg-2",
+						text: "Rescue boat en route, ETA 12 minutes. Stay on high ground and keep lights on.",
+						createdAt: new Date(now - 1000 * 60 * 2),
+						user: peerDirectory.emsDispatch,
+					},
+					{
+						_id: "ems-msg-1",
+						text: "We have two seniors with limited mobility and rising water in the living room.",
+						createdAt: new Date(now - 1000 * 60 * 5),
+						user: currentUser,
+					},
+					{
+						_id: "ems-msg-0",
+						text: "Copy. Confirming flash flood emergency at 482 River Bend?",
 						createdAt: new Date(now - 1000 * 60 * 7),
-						user: peerDirectory.recon,
-					},
-				],
-			},
-			{
-				id: "intel-thread",
-				title: "Intel Desk",
-				peer: peerDirectory.intel,
-				messages: [
-					{
-						_id: "intel-msg-1",
-						text: "Latest sat pass uploaded to the mission files.",
-						createdAt: new Date(now - 1000 * 60 * 25),
-						user: peerDirectory.intel,
+						user: peerDirectory.emsDispatch,
 					},
 				],
 			},
 		];
-	}, [peerDirectory]);
+	}, [peerDirectory, currentUser, familyMembers]);
 
 	const [chatThreads, setChatThreads] = useState<ChatThread[]>(() => initialThreads);
 
