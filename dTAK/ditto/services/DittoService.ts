@@ -73,17 +73,23 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
         this.config = config;
       
       // Create identity - use playground for development, onlineWithAuthentication for production
-      const identity = config.playgroundToken 
+      // If a playgroundToken is provided, enable Ditto Cloud sync so simulators
+      // and other remote peers can discover each other via the cloud. For
+      // production flows with authentication, leave cloud sync configurable
+      // (defaults to false unless explicitly enabled via config).
+      const identity = config.playgroundToken
         ? {
             type: 'onlinePlayground' as const,
             appID: config.appId,
             token: config.playgroundToken,
-            enableDittoCloudSync: false
+            enableDittoCloudSync: true,
           }
         : {
             type: 'onlineWithAuthentication' as const,
             appID: config.appId,
-            enableDittoCloudSync: false,
+            // keep cloud sync off by default for authenticated production
+            // flows unless caller explicitly requests it via config
+            enableDittoCloudSync: !!(config as any).enableDittoCloudSync || false,
             authHandler: {
               authenticationRequired: (authenticator: any) => {
                 console.log('Authentication required for production mode');
@@ -137,7 +143,8 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
         // ignore
       }
 
-      console.log('Ditto persistenceDirectory chosen:', persistenceDirectory);
+  console.log('Ditto persistenceDirectory chosen:', persistenceDirectory);
+  console.log('[DittoService] initializing Ditto with appId=', this.config?.appId, ' playgroundToken=', !!this.config?.playgroundToken);
 
       // Prefer Ditto constructor in React Native; Ditto.open() is not supported in RN
       const isReactNative = this.isReactNative();
