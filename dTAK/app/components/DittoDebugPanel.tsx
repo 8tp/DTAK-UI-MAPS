@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
+  // FlatList,
+  SectionList,
   TextInput,
   Button,
-  ScrollView,
   Platform,
 } from 'react-native';
 import { DittoService } from '../../ditto/services/DittoService';
@@ -84,38 +84,47 @@ export default function DittoDebugPanel({ onClose }: { onClose: () => void }) {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.section}>
-          <Text style={styles.sectionTitle}>Status</Text>
-          <Text style={styles.mono}>{status}</Text>
-
-          <Text style={styles.sectionTitle}>Peers ({peers.length})</Text>
-          <FlatList
-            data={peers}
-            keyExtractor={(i) => i.id}
-            renderItem={({ item }) => (
-              <View style={styles.row}>
-                <Text style={styles.mono}>{item.id}</Text>
-                <Text style={{ color: '#9ca3af' }}>{JSON.stringify(item.info)}</Text>
-              </View>
-            )}
-          />
-
-          <Text style={styles.sectionTitle}>Send Test Message</Text>
-          <TextInput value={payload} onChangeText={setPayload} style={styles.input} placeholder="message payload" />
-          <Button title="Send" onPress={sendTest} />
-
-          <Text style={styles.sectionTitle}>Recent Messages</Text>
-          <FlatList
-            data={messages}
-            keyExtractor={(_, i) => String(i)}
-            renderItem={({ item }) => (
+        <SectionList
+          style={styles.section}
+          sections={[
+            { key: 'status', title: 'Status', data: [{ type: 'status' }] },
+            { key: 'peers', title: `Peers (${peers.length})`, data: peers },
+            { key: 'send', title: 'Send Test Message', data: [{ type: 'send' }] },
+            { key: 'messages', title: 'Recent Messages', data: messages },
+          ]}
+          keyExtractor={(item: any, index) => item && item.id ? String(item.id) : String(item?.ts ?? index)}
+          renderSectionHeader={({ section: { title } }: any) => (
+            <Text style={styles.sectionTitle}>{title}</Text>
+          )}
+          renderItem={({ item, section }: any) => {
+            if (section.key === 'status') {
+              return <Text style={styles.mono}>{status}</Text>;
+            }
+            if (section.key === 'peers') {
+              return (
+                <View style={styles.row}>
+                  <Text style={styles.mono}>{item.id}</Text>
+                  <Text style={{ color: '#9ca3af' }}>{JSON.stringify(item.info)}</Text>
+                </View>
+              );
+            }
+            if (section.key === 'send') {
+              return (
+                <View>
+                  <TextInput value={payload} onChangeText={setPayload} style={styles.input} placeholder="message payload" />
+                  <Button title="Send" onPress={sendTest} />
+                </View>
+              );
+            }
+            // messages
+            return (
               <View style={styles.msgRow}>
                 <Text style={styles.mono}>{item.ts || ''}</Text>
                 <Text>{item.from}: {item.text}</Text>
               </View>
-            )}
-          />
-        </ScrollView>
+            );
+          }}
+        />
       </View>
     </View>
   );
