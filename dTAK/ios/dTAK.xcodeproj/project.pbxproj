@@ -304,6 +304,20 @@
 			shellPath = /bin/sh;
 			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
 		};
+		5E01BC13807443B9A4E767BF /* Remove signature files (Xcode workaround) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Remove signature files (Xcode workaround)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
+		};
 		5F4AF0A055F77AFDFE76875E /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -385,34 +399,14 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
-			name = "Remove signature files (Xcode workaround)";
 			inputPaths = (
 			);
+			name = "Remove signature files (Xcode workaround)";
 			outputPaths = (
-			);
-			shellPath = /bin/sh;
-			shellScript = "
-          echo \"Remove signature files (Xcode workaround)\";
-          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";
-        ";
-		};
-		5E01BC13807443B9A4E767BF /* Remove signature files (Xcode workaround) */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-			name = "Remove signature files (Xcode workaround)";
-			inputPaths = (
-			);
-			outputPaths = (
-			);
 			shellPath = /bin/sh;
-			shellScript = "
-          echo \"Remove signature files (Xcode workaround)\";
-          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";
-        ";
+			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
 		};
 		5E01BC13807443B9A4E767BF /* Remove signature files (Xcode workaround) */ = {
 			isa = PBXShellScriptBuildPhase;
