@@ -15,8 +15,10 @@ import {
 	RasterLayer,
 	RasterSource,
 	ShapeSource,
+	UserLocation,
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
@@ -34,10 +36,12 @@ import {
 	type MarkerCreationOverlayHandle,
 } from "../features/markers/components/MarkerCreationOverlay";
 import { MarkersOverlay } from "../features/markers/components/MarkersOverlay";
-import { useMarkers } from "../features/markers/state/MarkersProvider";
+import { MarkerDetailsModal } from "../features/markers/components/MarkerDetailsModal";
+import { ICONS } from "../features/markers/constants/icons";
 import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
 import type { BBox } from "../features/offline/tiles";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
+import { useMarkers } from "../features/markers/state/MarkersProvider";
 
 const BOTTOM_SHEET_BACKGROUND = "#26292B";
 
@@ -86,7 +90,7 @@ export default function App() {
 	const drawSquare = useDrawSquare();
 	const drawGrid = useDrawGrid();
 	const offline = useOfflineMaps();
-	const { state, dispatch } = useMarkers();
+	const { state: markersState, dispatch: markersDispatch } = useMarkers();
 	const markerCreationRef = useRef<MarkerCreationOverlayHandle | null>(null);
 	const [createCircleId, setCreateCircleId] = useState<string | undefined>(undefined);
 	const [viewCircleId, setViewCircleId] = useState<string | undefined>(undefined);
@@ -94,8 +98,20 @@ export default function App() {
 	const [viewSquareId, setViewSquareId] = useState<string | undefined>(undefined);
 	const [createGridId, setCreateGridId] = useState<string | undefined>(undefined);
 	const [viewGridId, setViewGridId] = useState<string | undefined>(undefined);
+    const [createModalVisible, setCreateModalVisible] = useState(false);
+    const [createIconId, setCreateIconId] = useState<string>("marker-default-pin");
+    const [pendingCreateCoord, setPendingCreateCoord] = useState<[number, number] | undefined>(undefined);
+    const [viewMarkerId, setViewMarkerId] = useState<string | undefined>(undefined);
 
 	const sheetRef = useRef<BottomSheet>(null);
+
+	React.useEffect(() => {
+		(async () => {
+			try {
+				await Location.requestForegroundPermissionsAsync();
+			} catch {}
+		})();
+	}, []);
 
 	const handleCameraPress = () => {
 		router.push("/camera" as never);
@@ -152,9 +168,6 @@ export default function App() {
 	};
 
 	const onMapLongPress = (e: any) => {
-		// Reveal the bottom sheet when long pressing
-		sheetRef.current?.snapToIndex(1);
-
 		const coord = e?.geometry?.coordinates ?? e?.coordinates;
 		const pointArray =
 			e?.point ??
@@ -232,8 +245,7 @@ export default function App() {
 				ref={mapRef as any}
 				style={styles.map}
 				onLongPress={onMapLongPress}
-				{...({ styleURL: "https://demotiles.maplibre.org/style.json" } as any)}
-			>
+				{...({ styleURL: "https://demotiles.maplibre.org/style.json" } as any)}>
 				<Camera
 					zoomLevel={
 						mapConfigurations[selectedMap as keyof typeof mapConfigurations].zoomLevel
@@ -245,7 +257,6 @@ export default function App() {
 				/>
 				<RasterSource
 					id="satelliteSource"
-					key={`sat-src-${selectedMap}-${useLocal ? "local" : "remote"}`}
 					tileUrlTemplates={[useLocal ? localTemplate : remoteTemplate]}
 					tileSize={256}>
 					<RasterLayer
@@ -362,10 +373,58 @@ export default function App() {
 					</ShapeSource>
 				)}
 				{/* Markers overlay */}
-                <MarkersOverlay />
-                {/* Marker creation overlay with preview + modal (must be inside MapView) */}
-                <MarkerCreationOverlay ref={markerCreationRef} />
-            </MapView>
+				<MarkersOverlay onMarkerPress={(id) => setViewMarkerId(id)} />
+				{/* Marker creation overlay with preview + modal (must be inside MapView) */}
+				<MarkerCreationOverlay
+					ref={markerCreationRef}
+					onPreviewStart={(coord) => {
+						setPendingCreateCoord(coord);
+						setCreateIconId("marker-default-pin");
+						setCreateModalVisible(true);
+					}}
+				/>
+
+				{/* User location marker */}
+				<UserLocation />
+			</MapView>
+			{/* Marker Details Modal - Create */}
+			<MarkerDetailsModal
+				visible={createModalVisible}
+				mode="create"
+				initialIconId={createIconId}
+				icons={ICONS}
+				onCancel={() => {
+					setCreateModalVisible(false);
+					setPendingCreateCoord(undefined);
+					markerCreationRef.current?.cancel();
+				}}
+				onIconChange={(id) => {
+					setCreateIconId(id);
+					markerCreationRef.current?.setIconId(id);
+				}}
+				onSave={({ title, description, iconId }) => {
+					if (!pendingCreateCoord) return;
+					const [lon, lat] = pendingCreateCoord;
+						markersDispatch({ type: "addMarker", payload: { lon, lat, meta: { title, description, iconId } } });
+						setCreateModalVisible(false);
+						setPendingCreateCoord(undefined);
+						markerCreationRef.current?.cancel();
+				}}
+			/>
+
+			{/* Marker Details Modal - View */}
+			<MarkerDetailsModal
+				visible={!!viewMarkerId}
+				mode="view"
+				icons={ICONS as any}
+				onCancel={() => setViewMarkerId(undefined)}
+				onDelete={() => {
+					if (!viewMarkerId) return;
+					markersDispatch({ type: "removeMarker", payload: { id: viewMarkerId } });
+					setViewMarkerId(undefined);
+				}}
+				marker={viewMarkerId ? (() => { const m = markersState.markers[viewMarkerId]; return m ? { title: m.title, description: m.description, iconId: m.iconId, createdAt: m.createdAt } : undefined; })() : undefined}
+			/>
 
             {/* Toolbar fixed at the top */}
             <SafeAreaView style={styles.toolbarContainer}>
