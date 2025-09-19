@@ -12,6 +12,9 @@ export type SquareFeature = GeoJSON.Feature<
 		center: LonLat;
 		halfDiagonal: number;
 		units: "meters";
+		title?: string;
+		description?: string;
+		createdAt?: number;
 	}
 >;
 
@@ -79,22 +82,24 @@ export function useDrawSquare() {
 	);
 
 	const onRelease = useCallback(
-		async (point?: [number, number]) => {
-			if (mode !== "DRAW_SQUARE" || !center) return;
+		async (point?: [number, number]): Promise<string | undefined> => {
+			if (mode !== "DRAW_SQUARE" || !center) return undefined;
 			let finalHalf = halfDiagonal ?? 0;
 			if (point && mapRef.current && finalHalf === 0) {
 				const coord = await mapRef.current.getCoordinateFromView(point);
 				finalHalf = metersBetween(center, [coord[0], coord[1]]);
 			}
 			const poly = approximateSquare(center, Math.max(0, finalHalf));
+			const id = generateSquareId();
 			const feature: SquareFeature = {
 				type: "Feature",
 				geometry: poly,
 				properties: {
-					id: generateSquareId(),
+					id,
 					center,
 					halfDiagonal: Math.max(0, finalHalf),
 					units: "meters",
+					createdAt: Date.now(),
 				},
 			};
 			setSquares((prev) => ({
@@ -105,6 +110,7 @@ export function useDrawSquare() {
 			setCenter(undefined);
 			setHalfDiagonal(undefined);
 			setMode("DEFAULT");
+			return id;
 		},
 		[mode, center, halfDiagonal]
 	);
@@ -116,6 +122,25 @@ export function useDrawSquare() {
 		}));
 	}, []);
 
+	const updateSquareById = useCallback(
+		(id: string, patch: Partial<{ title: string; description: string }>) => {
+			setSquares((prev) => ({
+				type: "FeatureCollection",
+				features: prev.features.map((f) => {
+					const props = (f.properties as any) || {};
+					if (props.id === id) {
+						return {
+							...f,
+							properties: { ...(f.properties as any), ...patch },
+						} as any;
+					}
+					return f;
+				}),
+			}));
+		},
+		[]
+	);
+
 	const findSquareAtCoordinate = useCallback(
 		(coord: LonLat) => {
 			for (const feature of squares.features as SquareFeature[]) {
@@ -124,6 +149,13 @@ export function useDrawSquare() {
 				}
 			}
 			return undefined;
+		},
+		[squares]
+	);
+
+	const getSquareById = useCallback(
+		(id: string) => {
+			return (squares.features as SquareFeature[]).find((f) => f.properties.id === id);
 		},
 		[squares]
 	);
@@ -147,5 +179,7 @@ export function useDrawSquare() {
 		mapRef,
 		removeSquareById,
 		findSquareAtCoordinate,
+		updateSquareById,
+		getSquareById,
 	} as const;
 }

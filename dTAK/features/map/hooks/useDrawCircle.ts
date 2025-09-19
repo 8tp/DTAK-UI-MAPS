@@ -12,6 +12,9 @@ export type CircleFeature = GeoJSON.Feature<
     center: LonLat;
     radius: number;
     units: "meters";
+    title?: string;
+    description?: string;
+    createdAt?: number;
   }
 >;
 
@@ -83,22 +86,24 @@ export function useDrawCircle() {
   );
 
   const onRelease = useCallback(
-    async (point?: [number, number]) => {
-      if (mode !== "DRAW_CIRCLE" || !center) return;
+    async (point?: [number, number]): Promise<string | undefined> => {
+      if (mode !== "DRAW_CIRCLE" || !center) return undefined;
       let finalRadius = radius ?? 0;
       if (point && mapRef.current && finalRadius === 0) {
         const coord = await mapRef.current.getCoordinateFromView(point);
         finalRadius = metersBetween(center, [coord[0], coord[1]]);
       }
       const poly = approximateCircle(center, Math.max(0, finalRadius), 32);
+      const id = generateCircleId();
       const feature: CircleFeature = {
         type: "Feature",
         geometry: poly,
         properties: {
-          id: generateCircleId(),
+          id,
           center,
           radius: Math.max(0, finalRadius),
           units: "meters",
+          createdAt: Date.now(),
         },
       };
       setCircles((prev) => ({
@@ -109,6 +114,7 @@ export function useDrawCircle() {
       setCenter(undefined);
       setRadius(undefined);
       setMode("DEFAULT");
+      return id;
     },
     [mode, center, radius]
   );
@@ -119,6 +125,25 @@ export function useDrawCircle() {
       features: prev.features.filter((f) => (f.properties as any)?.id !== id),
     }));
   }, []);
+
+  const updateCircleById = useCallback(
+    (id: string, patch: Partial<{ title: string; description: string }>) => {
+      setCircles((prev) => ({
+        type: "FeatureCollection",
+        features: prev.features.map((f) => {
+          const props = (f.properties as any) || {};
+          if (props.id === id) {
+            return {
+              ...f,
+              properties: { ...(f.properties as any), ...patch },
+            } as any;
+          }
+          return f;
+        }),
+      }));
+    },
+    []
+  );
 
   const findCircleAtCoordinate = useCallback(
     (coord: LonLat) => {
@@ -142,6 +167,13 @@ export function useDrawCircle() {
     [circles, preview]
   );
 
+  const getCircleById = useCallback(
+    (id: string) => {
+      return (circles.features as CircleFeature[]).find((f) => f.properties.id === id);
+    },
+    [circles]
+  );
+
   return {
     mode,
     start,
@@ -153,5 +185,7 @@ export function useDrawCircle() {
     mapRef,
     removeCircleById,
     findCircleAtCoordinate,
+    updateCircleById,
+    getCircleById,
   } as const;
 }

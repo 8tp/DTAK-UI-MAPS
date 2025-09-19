@@ -24,6 +24,8 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { performAction } from "../features/map/actions/radialActions";
 import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 import { RadialMenu } from "../features/map/components/RadialMenu";
+import { CircleDetailsModal } from "../features/map/components/CircleDetailsModal";
+import { SquareDetailsModal } from "../features/map/components/SquareDetailsModal";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useDrawSquare } from "../features/map/hooks/useDrawSquare";
 import { useDrawGrid } from "../features/map/hooks/useDrawGrid";
@@ -88,6 +90,10 @@ export default function App() {
 	const offline = useOfflineMaps();
 	const { state, dispatch } = useMarkers();
 	const markerCreationRef = useRef<MarkerCreationOverlayHandle | null>(null);
+	const [createCircleId, setCreateCircleId] = useState<string | undefined>(undefined);
+	const [viewCircleId, setViewCircleId] = useState<string | undefined>(undefined);
+	const [createSquareId, setCreateSquareId] = useState<string | undefined>(undefined);
+	const [viewSquareId, setViewSquareId] = useState<string | undefined>(undefined);
 
 	const sheetRef = useRef<BottomSheet>(null);
 
@@ -296,7 +302,15 @@ export default function App() {
 				)}
 				{/* Persisted circles */}
 				{draw.sources.circles.features.length > 0 && (
-					<ShapeSource id="circlesSource" shape={draw.sources.circles}>
+					<ShapeSource
+						id="circlesSource"
+						shape={draw.sources.circles}
+						onPress={(e: any) => {
+							const id = e?.features?.[0]?.properties?.id as string | undefined;
+							if (!id) return;
+							setViewCircleId(id);
+						}}
+					>
 						<FillLayer
 							id="circlesFill"
 							style={{ fillOpacity: 0.2, fillColor: "#2563eb" }}
@@ -322,7 +336,15 @@ export default function App() {
 				)}
 				{/* Persisted squares */}
 				{drawSquare.sources.squares.features.length > 0 && (
-					<ShapeSource id="squaresSource" shape={drawSquare.sources.squares}>
+					<ShapeSource
+						id="squaresSource"
+						shape={drawSquare.sources.squares}
+						onPress={(e: any) => {
+							const id = e?.features?.[0]?.properties?.id as string | undefined;
+							if (!id) return;
+							setViewSquareId(id);
+						}}
+					>
 						<FillLayer
 							id="squaresFill"
 							style={{ fillOpacity: 0.2, fillColor: "#16a34a" }}
@@ -494,6 +516,92 @@ export default function App() {
 				onRequestClose={() => setVisible(false)}
 			/>
 
+			{/* Circle details - create mode */}
+			<CircleDetailsModal
+				visible={!!createCircleId}
+				mode="create"
+				onCancel={() => {
+					if (createCircleId) draw.removeCircleById(createCircleId);
+					setCreateCircleId(undefined);
+				}}
+				onSave={({ title, description }) => {
+					if (createCircleId) {
+						draw.updateCircleById(createCircleId, { title, description });
+					}
+					setCreateCircleId(undefined);
+				}}
+			/>
+
+			{/* Circle details - view mode */}
+			{(() => {
+				const viewCircle = viewCircleId ? draw.getCircleById(viewCircleId) : undefined;
+				return (
+					<CircleDetailsModal
+						visible={!!viewCircle}
+						mode="view"
+						circle={
+							viewCircle
+								? {
+									title: (viewCircle.properties as any)?.title,
+									description: (viewCircle.properties as any)?.description,
+									createdAt: (viewCircle.properties as any)?.createdAt,
+								}
+								: undefined
+						}
+						onCancel={() => setViewCircleId(undefined)}
+						onDelete={() => {
+							if (viewCircleId) {
+								draw.removeCircleById(viewCircleId);
+							}
+							setViewCircleId(undefined);
+						}}
+					/>
+				);
+			})()}
+
+			{/* Square details - create mode */}
+			<SquareDetailsModal
+				visible={!!createSquareId}
+				mode="create"
+				onCancel={() => {
+					if (createSquareId) drawSquare.removeSquareById(createSquareId);
+					setCreateSquareId(undefined);
+				}}
+				onSave={({ title, description }) => {
+					if (createSquareId) {
+						drawSquare.updateSquareById(createSquareId, { title, description });
+					}
+					setCreateSquareId(undefined);
+				}}
+			/>
+
+			{/* Square details - view mode */}
+			{(() => {
+				const viewSquare = viewSquareId ? drawSquare.getSquareById(viewSquareId) : undefined;
+				return (
+					<SquareDetailsModal
+						visible={!!viewSquare}
+						mode="view"
+						square={
+							viewSquare
+								? {
+									title: (viewSquare.properties as any)?.title,
+									description: (viewSquare.properties as any)?.description,
+									createdAt: (viewSquare.properties as any)?.createdAt,
+								}
+								: undefined
+						}
+						onCancel={() => setViewSquareId(undefined)}
+						onDelete={() => {
+							if (viewSquareId) {
+								drawSquare.removeSquareById(viewSquareId);
+							}
+							setViewSquareId(undefined);
+						}}
+					/>
+				);
+			})()}
+
 			<AccountMenu
 				visible={accountMenuVisible}
 				onClose={() => setAccountMenuVisible(false)}
@@ -514,9 +622,10 @@ export default function App() {
 						const { locationX, locationY } = e.nativeEvent;
 						draw.onDrag([locationX, locationY]);
 					}}
-					onResponderRelease={(e: GestureResponderEvent) => {
+					onResponderRelease={async (e: GestureResponderEvent) => {
 						const { locationX, locationY } = e.nativeEvent;
-						draw.onRelease([locationX, locationY]);
+						const id = await draw.onRelease([locationX, locationY]);
+						if (id) setCreateCircleId(id);
 					}}
 				/>
 			)}
@@ -534,9 +643,10 @@ export default function App() {
 						const { locationX, locationY } = e.nativeEvent;
 						drawSquare.onDrag([locationX, locationY]);
 					}}
-					onResponderRelease={(e: GestureResponderEvent) => {
+					onResponderRelease={async (e: GestureResponderEvent) => {
 						const { locationX, locationY } = e.nativeEvent;
-						drawSquare.onRelease([locationX, locationY]);
+						const id = await drawSquare.onRelease([locationX, locationY]);
+						if (id) setCreateSquareId(id);
 					}}
 				/>
 			)}
