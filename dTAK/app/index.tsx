@@ -21,15 +21,13 @@ import {
 } from "@maplibre/maplibre-react-native";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-<<<<<<< HEAD
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
-=======
-import React, { useMemo, useRef, useState } from "react";
 import { GestureResponderEvent, Pressable, StyleSheet, Text, View, TouchableOpacity } from "react-native";
->>>>>>> committing updates for ditto debug panel
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import DittoDebugPanel from './components/DittoDebugPanel';
+import Constants from 'expo-constants';
+import { DittoService } from '../ditto/services/DittoService';
 import { performAction } from "../features/map/actions/radialActions";
 import { RadialMenu } from "../features/map/components/RadialMenu";
 import { CircleDetailsModal } from "../features/map/components/CircleDetailsModal";
@@ -118,7 +116,6 @@ export default function App() {
 
 	const sheetRef = useRef<BottomSheet>(null);
 		const [showDebug, setShowDebug] = useState(false);
-<<<<<<< HEAD
 
 		// Ensure Ditto initializes early in the app lifecycle when config is present.
 		useEffect(() => {
@@ -168,8 +165,37 @@ export default function App() {
 		setCameraCenter(config.centerCoordinate);
 		setCameraZoom(config.zoomLevel);
 	}, [selectedMap]);
-=======
->>>>>>> committing updates for ditto debug panel
+
+		// Ensure Ditto initializes early in the app lifecycle when config is present.
+		useEffect(() => {
+			// Prefer Expo public env vars, then fallback to process.env
+			const expoEnv = (Constants && Constants.manifest && (Constants.manifest as any).extra) || {};
+			const appId = process.env.EXPO_PUBLIC_DITTO_APP_ID || process.env.EXPO_PUBLIC_DITTO_PROD_APP_ID || (expoEnv.EXPO_PUBLIC_DITTO_APP_ID as string) || (expoEnv.EXPO_PUBLIC_DITTO_PROD_APP_ID as string) || (Constants.manifest?.extra?.EXPO_PUBLIC_DITTO_APP_ID as any) || (Constants.expoConfig && (Constants.expoConfig as any).extra && (Constants.expoConfig as any).extra.EXPO_PUBLIC_DITTO_APP_ID);
+			if (!appId) {
+				console.warn('[App] No Ditto App ID found in environment; skipping Ditto initialization');
+				return;
+			}
+
+			const svc = DittoService.getInstance();
+			// Build a conservative config object; enable transports by default
+			const cfg = {
+				appId: String(appId),
+				playgroundToken: process.env.EXPO_PUBLIC_DITTO_PLAYGROUND_TOKEN || (expoEnv.EXPO_PUBLIC_DITTO_PLAYGROUND_TOKEN as string),
+				websocketURL: process.env.EXPO_PUBLIC_DITTO_WEBSOCKET_URL || (expoEnv.EXPO_PUBLIC_DITTO_WEBSOCKET_URL as string),
+				enableBluetooth: true,
+				enableWiFi: true,
+				enableAWDL: true,
+			} as const;
+
+			(async () => {
+				try {
+					await svc.initialize(cfg as any);
+					console.log('[App] Ditto initialization triggered');
+				} catch (err) {
+					console.error('[App] Ditto initialization failed at startup', err);
+				}
+			})();
+		}, []);
 
 	const handleCameraPress = () => {
 		router.push("/camera" as never);
@@ -438,6 +464,52 @@ export default function App() {
 		ackTimeouts.current[threadId] = [...(ackTimeouts.current[threadId] ?? []), timeout];
 	}, []);
 
+	const handleChatSend = useCallback((threadId: string, outgoingMessages: IMessage[] = []) => {
+		if (outgoingMessages.length === 0) {
+			return;
+		}
+
+		const targetThread = chatThreadsRef.current.find((thread) => thread.id === threadId);
+		if (!targetThread) {
+			return;
+		}
+
+		setChatThreads((previousThreads) =>
+			previousThreads.map((thread) =>
+				thread.id === threadId
+					? { ...thread, messages: GiftedChat.append(thread.messages, outgoingMessages) }
+					: thread,
+			),
+		);
+
+		const [firstMessage] = outgoingMessages;
+		if (!firstMessage) {
+			return;
+		}
+
+		const acknowledgement: IMessage = {
+			_id: `ack-${threadId}-${firstMessage._id}-${Date.now()}`,
+			text: "Okay, got it.",
+			createdAt: new Date(Date.now() + 500),
+			user: targetThread.peer,
+		};
+
+		const timeout = setTimeout(() => {
+			setChatThreads((previousThreads) =>
+				previousThreads.map((thread) =>
+					thread.id === threadId
+						? { ...thread, messages: GiftedChat.append(thread.messages, [acknowledgement]) }
+						: thread,
+				),
+			);
+			ackTimeouts.current[threadId] = (ackTimeouts.current[threadId] ?? []).filter(
+				(item) => item !== timeout,
+			);
+		}, 650 + Math.random() * 600);
+
+		ackTimeouts.current[threadId] = [...(ackTimeouts.current[threadId] ?? []), timeout];
+	}, []);
+
 	const onMapLongPress = (e: any) => {
 		const coord = e?.geometry?.coordinates ?? e?.coordinates;
 		const pointArray =
@@ -471,13 +543,13 @@ export default function App() {
 		{
 			id: "new-york",
 			name: "New York",
-			thumbnail: require("../assets/images/radial-pin.png"),
+			thumbnail: require("@assets/images/radial-pin.png"),
 		},
-		{ id: "chicago", name: "Chicago", thumbnail: require("../assets/images/radial-pin.png") },
+		{ id: "chicago", name: "Chicago", thumbnail: require("@assets/images/radial-pin.png") },
 		{
 			id: "montgomery",
 			name: "Montgomery",
-			thumbnail: require("../assets/images/radial-pin.png"),
+			thumbnail: require("@assets/images/radial-pin.png"),
 		},
 	].map((m) => {
 		const agg = offline.getAggregateForMap?.(m.id);
@@ -666,7 +738,6 @@ export default function App() {
 				<Text style={{ color: '#fff', fontWeight: '700' }}>DITTO</Text>
 			</TouchableOpacity>
 
-<<<<<<< HEAD
 			{/* Marker Details Modal - Create */}
 			<MarkerDetailsModal
 				visible={createModalVisible}
@@ -705,8 +776,6 @@ export default function App() {
 				}}
 				marker={viewMarkerId ? (() => { const m = markersState.markers[viewMarkerId]; return m ? { title: m.title, description: m.description, iconId: m.iconId, createdAt: m.createdAt } : undefined; })() : undefined}
 			/>
-=======
->>>>>>> committing updates for ditto debug panel
 
 			{/* Toolbar fixed at the top */}
 			<SafeAreaView style={styles.toolbarContainer}>
@@ -1085,10 +1154,6 @@ const styles = StyleSheet.create({
 	},
 });
 
-<<<<<<< HEAD
-
-=======
->>>>>>> committing updates for ditto debug panel
 const debugStyles = StyleSheet.create({
 	fab: {
 		position: 'absolute',
@@ -1101,8 +1166,4 @@ const debugStyles = StyleSheet.create({
 		elevation: 6,
 		zIndex: 3000,
 	},
-<<<<<<< HEAD
 });
-=======
-});
->>>>>>> committing updates for ditto debug panel

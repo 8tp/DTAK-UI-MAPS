@@ -11,6 +11,31 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
   private initializingPromise: Promise<void> | null = null;
   private listeners: Map<keyof DittoServiceEvents, Set<Function>> = new Map();
   private config: DittoConfig | null = null;
+  // Queue of peer observer callbacks registered before Ditto is ready
+  private pendingPeerObservers: ((peers: any[]) => void)[] = [];
+
+  // Internal helper to attach a peer observer to the underlying Ditto instance.
+  // This abstracts the differences in Ditto SDKs (`observePeers` vs `presence.observe`).
+  private _attachPeerObserver(cb: (peers: any[]) => void) {
+    if (!this.ditto) throw new Error('Ditto not initialized');
+    const d: any = this.ditto;
+    // Prefer direct observePeers when available (legacy), else use presence.observe
+    if (typeof d.observePeers === 'function') {
+      d.observePeers(cb);
+      return;
+    }
+    if (d.presence && typeof d.presence.observe === 'function') {
+      d.presence.observe(cb);
+      return;
+    }
+    // As last resort, try presenceManager if exposed
+    if (typeof d.observeTransportConditions === 'function') {
+      // Not strictly peer observation, but keep API tolerant.
+      d.observeTransportConditions(cb);
+      return;
+    }
+    throw new Error('Ditto peer observation API not found on Ditto instance');
+  }
 
   private constructor() {
     this.initializeListeners();
@@ -248,9 +273,30 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
         this.isInitialized = true;
         this.emit('initialized');
         console.log('Ditto initialized successfully');
+
+        // Attach any peer observers that were registered prior to initialization
+        try {
+          if (this.pendingPeerObservers.length && this.ditto) {
+            const pending = this.pendingPeerObservers.splice(0);
+            for (const cb of pending) {
+              try {
+                // Attach using internal helper which expects ditto to be available
+                this._attachPeerObserver(cb);
+              } catch (attachErr) {
+                console.warn('Failed to attach pending peer observer:', attachErr);
+              }
+            }
+          }
+        } catch (flushErr) {
+          console.warn('Failed flushing pending peer observers after initialization:', flushErr);
+        }
       } catch (error) {
         const dittoError = error instanceof Error ? error : new Error('Failed to initialize Ditto');
         console.error('Failed to initialize Ditto:', dittoError);
+        // Clear any queued peer observers to avoid leaking callbacks when
+        // initialization fails. Callers should retry initialization and re-register
+        // observers as needed.
+        try { this.pendingPeerObservers.splice(0); } catch {}
         this.emit('error', dittoError);
         throw dittoError;
       } finally {
@@ -341,20 +387,21 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
   }
 
   async observePeers(callback: (peers: any[]) => void): Promise<void> {
+    // If Ditto isn't ready yet, queue the callback and attach it after
+    // initialization completes. This is preferred for UI code that calls
+    // observePeers synchronously in an effect immediately after calling
+    // initialize(). If initialization already failed, this will throw.
     if (!this.ditto) {
+      if (this.initializingPromise) {
+        // Queue and return; the flush on successful init will attach it.
+        this.pendingPeerObservers.push(callback);
+        return;
+      }
       throw new Error('Ditto not initialized');
     }
 
-    // Prefer the stable `observePeers` API when available; fall back to
-    // `observePeersV2` for older/newer SDK shapes. Use any to be tolerant.
-    const d: any = this.ditto;
-    if (typeof d.observePeers === 'function') {
-      d.observePeers(callback);
-    } else if (typeof d.observePeersV2 === 'function') {
-      d.observePeersV2(callback);
-    } else {
-      throw new Error('Ditto peer observation API not found on Ditto instance');
-    }
+    // Attach immediately when Ditto is available.
+    this._attachPeerObserver(callback);
   }
 
   async getStore() {
