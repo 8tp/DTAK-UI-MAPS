@@ -15,6 +15,9 @@ export function performAction(action: RadialAction, ctx: RadialSelectContext) {
         case "grid":
             ctx.startGrid && ctx.startGrid();
             break;
+        case "line":
+            ctx.startLine && ctx.startLine();
+            break;
 		case "map-style":
 			// TODO: Toggle style or open style selector
 			break;

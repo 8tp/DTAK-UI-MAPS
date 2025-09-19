@@ -6,7 +6,7 @@ export const DEFAULT_RADIAL_ITEMS: RadialItem[] = [
 	{ key: "square", action: "square", icon: { image: require("../../../assets/images/radial-square.png") }, label: "Square" },
 	// Replace default icons with custom image-based items to keep an 8-item wheel
 	{ key: "arrow", action: "annotate", icon: { image: require("../../../assets/images/radial-arrow.png") }, label: "Arrow" },
-	{ key: "line", action: "annotate", icon: { image: require("../../../assets/images/radial-line.png") }, label: "Line" },
+	{ key: "line", action: "line", icon: { image: require("../../../assets/images/radial-line.png") }, label: "Line" },
 	{ key: "target", action: "annotate", icon: { image: require("../../../assets/images/radial-target.png") }, label: "Target" },
 	{ key: "hazard", action: "annotate", icon: { image: require("../../../assets/images/radial-hazard.png") }, label: "Hazard" },
 	{ key: "circle", action: "circle", icon: { image: require("../../../assets/images/radial-circle.png") }, label: "Circle" },

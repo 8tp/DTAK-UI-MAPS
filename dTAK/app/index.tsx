@@ -17,6 +17,7 @@ import {
 	ShapeSource,
 	UserLocation,
 	type MapViewRef,
+    CircleLayer,
 } from "@maplibre/maplibre-react-native";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
@@ -28,9 +29,11 @@ import { RadialMenu } from "../features/map/components/RadialMenu";
 import { CircleDetailsModal } from "../features/map/components/CircleDetailsModal";
 import { SquareDetailsModal } from "../features/map/components/SquareDetailsModal";
 import { GridDetailsModal } from "../features/map/components/GridDetailsModal";
+import { LineDetailsModal } from "../features/map/components/LineDetailsModal";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useDrawSquare } from "../features/map/hooks/useDrawSquare";
 import { useDrawGrid } from "../features/map/hooks/useDrawGrid";
+import { useDrawLine } from "../features/map/hooks/useDrawLine";
 import {
 	MarkerCreationOverlay,
 	type MarkerCreationOverlayHandle,
@@ -89,6 +92,7 @@ export default function App() {
 	const draw = useDrawCircle();
 	const drawSquare = useDrawSquare();
 	const drawGrid = useDrawGrid();
+    const drawLine = useDrawLine();
 	const offline = useOfflineMaps();
 	const { state: markersState, dispatch: markersDispatch } = useMarkers();
 	const markerCreationRef = useRef<MarkerCreationOverlayHandle | null>(null);
@@ -98,6 +102,8 @@ export default function App() {
 	const [viewSquareId, setViewSquareId] = useState<string | undefined>(undefined);
 	const [createGridId, setCreateGridId] = useState<string | undefined>(undefined);
 	const [viewGridId, setViewGridId] = useState<string | undefined>(undefined);
+    const [createLineId, setCreateLineId] = useState<string | undefined>(undefined);
+    const [viewLineId, setViewLineId] = useState<string | undefined>(undefined);
     const [createModalVisible, setCreateModalVisible] = useState(false);
     const [createIconId, setCreateIconId] = useState<string>("marker-default-pin");
     const [pendingCreateCoord, setPendingCreateCoord] = useState<[number, number] | undefined>(undefined);
@@ -134,6 +140,9 @@ export default function App() {
 			startGrid: () => {
 				if (mapRef.current) drawGrid.start(mapRef.current);
 			},
+            startLine: () => {
+                if (mapRef.current) drawLine.start(mapRef.current);
+            },
 			startMarker: () => {
 				if (mapRef.current && anchor) {
 					markerCreationRef.current?.startAtScreenPoint(mapRef.current, [
@@ -369,6 +378,62 @@ export default function App() {
 								lineCap: "round",
 								lineJoin: "round",
 							}}
+						/>
+					</ShapeSource>
+				)}
+
+				{/* Line preview source (line + two endpoint dots) */}
+				{drawLine.sources.previewLine && (
+					<ShapeSource id="linePreviewSource" shape={drawLine.sources.previewLine}>
+						<LineLayer
+							id="linePreviewLine"
+							style={{ lineColor: "#f97316", lineWidth: 4, lineOpacity: 0.95, lineCap: "round" }}
+						/>
+					</ShapeSource>
+				)}
+				{drawLine.sources.previewPoints && drawLine.sources.previewPoints.features.length > 0 && (
+					<ShapeSource id="linePreviewPoints" shape={drawLine.sources.previewPoints}>
+						<CircleLayer
+							id="linePreviewPointsCircle"
+							style={{ circleRadius: 6, circleColor: "#f97316", circleStrokeColor: "#ffffff", circleStrokeWidth: 2 }}
+						/>
+					</ShapeSource>
+				)}
+
+				{/* Persisted lines */}
+				{drawLine.sources.lines && drawLine.sources.lines.features.length > 0 && (
+					<ShapeSource
+						id="linesSource"
+						shape={drawLine.sources.lines}
+						onPress={(e: any) => {
+							const id = e?.features?.[0]?.properties?.id as string | undefined;
+							if (!id) return;
+							setViewLineId(id);
+						}}
+					>
+						<LineLayer id="linesLayer" style={{ lineColor: "#ea580c", lineWidth: 4, lineOpacity: 1, lineCap: "round" }} />
+					</ShapeSource>
+				)}
+				{/* Persisted line endpoints (dots) */}
+				{drawLine.sources.lines && drawLine.sources.lines.features.length > 0 && (
+					<ShapeSource
+						id="linesEndpoints"
+						shape={{
+							type: "FeatureCollection",
+							features: (drawLine.sources.lines.features as any[]).flatMap((f: any) => {
+								const coords = (f.geometry?.coordinates || []) as [number, number][];
+								const id = f?.properties?.id;
+								if (!coords || coords.length < 2) return [] as any[];
+								return [
+									{ type: "Feature", geometry: { type: "Point", coordinates: coords[0] }, properties: { role: "start", id } },
+									{ type: "Feature", geometry: { type: "Point", coordinates: coords[1] }, properties: { role: "end", id } },
+								];
+							}),
+						} as any}
+					>
+						<CircleLayer
+							id="linesEndpointsCircle"
+							style={{ circleRadius: 5.5, circleColor: "#ea580c", circleStrokeColor: "#ffffff", circleStrokeWidth: 2 }}
 						/>
 					</ShapeSource>
 				)}
@@ -681,6 +746,63 @@ export default function App() {
   );
 })()}
 
+			{/* Line details - create mode */}
+			{(() => {
+			  const createLine = createLineId ? drawLine.getLineById(createLineId) : undefined;
+			  return (
+			    <LineDetailsModal
+			      visible={!!createLineId}
+			      mode="create"
+			      line={
+			        createLine
+			          ? {
+			              lengthMeters: (createLine.properties as any)?.lengthMeters,
+			            }
+			          : undefined
+			      }
+			      onCancel={() => {
+			        if (createLineId) drawLine.removeLineById(createLineId);
+			        setCreateLineId(undefined);
+			      }}
+			      onSave={(payload: { title?: string; description?: string }) => {
+			        const { title, description } = payload;
+			        if (createLineId) {
+			          drawLine.updateLineById(createLineId, { title, description });
+			        }
+			        setCreateLineId(undefined);
+			      }}
+			    />
+			  );
+			})()}
+
+			{/* Line details - view mode */}
+			{(() => {
+			  const viewLine = viewLineId ? drawLine.getLineById(viewLineId) : undefined;
+			  return (
+			    <LineDetailsModal
+			      visible={!!viewLine}
+			      mode="view"
+			      line={
+			        viewLine
+			          ? {
+			              title: (viewLine.properties as any)?.title,
+			              description: (viewLine.properties as any)?.description,
+			              createdAt: (viewLine.properties as any)?.createdAt,
+			              lengthMeters: (viewLine.properties as any)?.lengthMeters,
+			            }
+			          : undefined
+			      }
+			      onCancel={() => setViewLineId(undefined)}
+			      onDelete={() => {
+			        if (viewLineId) {
+			          drawLine.removeLineById(viewLineId);
+			        }
+			        setViewLineId(undefined);
+			      }}
+			    />
+			  );
+			})()}
+
 			<AccountMenu
 				visible={accountMenuVisible}
 				onClose={() => setAccountMenuVisible(false)}
@@ -747,6 +869,27 @@ export default function App() {
 						const { locationX, locationY } = e.nativeEvent;
 						const id = await drawGrid.onRelease([locationX, locationY]);
 						if (id) setCreateGridId(id);
+					}}
+				/>
+			)}
+			{drawLine.mode === "DRAW_LINE" && (
+				<View
+					style={StyleSheet.absoluteFill}
+					pointerEvents="box-only"
+					onStartShouldSetResponder={() => true}
+					onMoveShouldSetResponder={() => true}
+					onResponderGrant={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						drawLine.onTap([locationX, locationY]);
+					}}
+					onResponderMove={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						drawLine.onDrag([locationX, locationY]);
+					}}
+					onResponderRelease={async (e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						const id = await drawLine.onRelease([locationX, locationY]);
+						if (id) setCreateLineId(id);
 					}}
 				/>
 			)}
