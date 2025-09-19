@@ -29,7 +29,7 @@ export default function PluginsSection({
 	return (
 		<View style={styles.container}>
 			<View style={styles.header}>
-				<Text style={styles.title}>Plugins</Text>
+				<Text style={styles.title}>Apps</Text>
 				<TouchableOpacity onPress={onViewMore} style={styles.viewMoreButton}>
 					<Text style={styles.viewMoreText}>View more</Text>
 					<Text style={styles.arrow}>→</Text>
@@ -58,16 +58,6 @@ const defaultPlugins: PluginData[] = [
 		id: "chat",
 		name: "CHAT",
 		icon: require("@assets/images/group-chat.png"),
-	},
-	{
-		id: "persco",
-		name: "PERSCO",
-		icon: require("@assets/images/jet-icon.png"),
-	},
-	{
-		id: "killbox",
-		name: "Killbox",
-		icon: require("@assets/images/skull-icon.png"),
 	},
 ];
 

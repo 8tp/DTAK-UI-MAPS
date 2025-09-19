@@ -20,9 +20,10 @@ type ToolbarPillProps = {
 	style?: ViewStyle; // allow external overrides
 	textStyle?: TextStyle; // allow customizing text
 	accessibilityLabel?: string;
+	accessibilityHint?: string;
 };
 
-export default function ToolbarPill({ onPress, icon, iconComponent, text, style, textStyle, accessibilityLabel }: ToolbarPillProps) {
+export default function ToolbarPill({ onPress, icon, iconComponent, text, style, textStyle, accessibilityLabel, accessibilityHint }: ToolbarPillProps) {
 	const iconNode = iconComponent ? (
 		<View style={styles.iconWrapper}>{iconComponent}</View>
 	) : icon ? (
@@ -34,7 +35,8 @@ export default function ToolbarPill({ onPress, icon, iconComponent, text, style,
 			onPress={onPress}
 			style={[styles.button, style]}
 			accessibilityRole="button"
-			accessibilityLabel={accessibilityLabel}>
+			accessibilityLabel={accessibilityLabel}
+			accessibilityHint={accessibilityHint}>
 			<View style={styles.content}>
 				{iconNode}
 				{text ? <Text style={[styles.text, textStyle]}>{text}</Text> : null}

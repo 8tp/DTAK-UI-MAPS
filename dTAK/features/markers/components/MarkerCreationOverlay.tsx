@@ -1,15 +1,18 @@
 import React, { forwardRef, useImperativeHandle, useState } from "react";
 import { ShapeSource, SymbolLayer, type MapViewRef } from "@maplibre/maplibre-react-native";
-import { useMarkers } from "../state/MarkersProvider";
-import { MarkerDetailsModal } from "./MarkerDetailsModal";
-import { ICONS } from "../constants/icons";
 
 export type MarkerCreationOverlayHandle = {
   startAtScreenPoint: (mapRef: MapViewRef, screenPoint: [number, number]) => Promise<void>;
+  setIconId: (iconId: string) => void;
+  getPendingCoord: () => [number, number] | undefined;
+  cancel: () => void;
 };
 
-export const MarkerCreationOverlay = forwardRef<MarkerCreationOverlayHandle, {}>((_props, ref) => {
-  const { dispatch } = useMarkers();
+type Props = {
+  onPreviewStart?: (coord: [number, number]) => void;
+};
+
+export const MarkerCreationOverlay = forwardRef<MarkerCreationOverlayHandle, Props>((props, ref) => {
   const [visible, setVisible] = useState(false);
   const [pendingCoord, setPendingCoord] = useState<[number, number] | undefined>(undefined);
   const [pendingIconId, setPendingIconId] = useState<string>("marker-default-pin");
@@ -29,13 +32,24 @@ export const MarkerCreationOverlay = forwardRef<MarkerCreationOverlayHandle, {}>
             setPendingCoord([coord[0], coord[1]]);
             setPendingIconId("marker-default-pin");
             setVisible(true);
+            props.onPreviewStart && props.onPreviewStart([coord[0], coord[1]]);
           }
         } catch {
           // ignore
         }
       },
+      setIconId(iconId: string) {
+        setPendingIconId(iconId || "marker-default-pin");
+      },
+      getPendingCoord() {
+        return pendingCoord;
+      },
+      cancel() {
+        setVisible(false);
+        setPendingCoord(undefined);
+      },
     }),
-    []
+    [pendingCoord, props.onPreviewStart]
   );
 
   return (
@@ -63,25 +77,6 @@ export const MarkerCreationOverlay = forwardRef<MarkerCreationOverlayHandle, {}>
             />
           </ShapeSource>
         )}
-
-      <MarkerDetailsModal
-        visible={visible}
-        mode="create"
-        initialIconId="marker-default-pin"
-        icons={ICONS}
-        onCancel={() => {
-          setVisible(false);
-          setPendingCoord(undefined);
-        }}
-        onIconChange={(id) => setPendingIconId(id)}
-        onSave={({ title, description, iconId }) => {
-          if (!pendingCoord) return;
-          const [lon, lat] = pendingCoord;
-          dispatch({ type: "addMarker", payload: { lon, lat, meta: { title, description, iconId } } });
-          setVisible(false);
-          setPendingCoord(undefined);
-        }}
-      />
     </>
   );
 });

@@ -2,6 +2,7 @@ import AccountMenu from "@components/AccountMenu";
 import MapsSection from "@components/MapsSection";
 import PluginsSection from "@components/PluginsSection";
 import Toolbar from "@components/Toolbar";
+import ChatInboxModal, { type ChatThread, type MinimalUser } from "@components/chat/ChatInboxModal";
 import BottomSheet, {
 	BottomSheetBackgroundProps,
 	BottomSheetHandleProps,
@@ -15,27 +16,34 @@ import {
 	RasterLayer,
 	RasterSource,
 	ShapeSource,
+	UserLocation,
 	type MapViewRef,
 } from "@maplibre/maplibre-react-native";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
-import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { performAction } from "../features/map/actions/radialActions";
-import { DeleteOverlay } from "../features/map/components/DeleteOverlay";
 import { RadialMenu } from "../features/map/components/RadialMenu";
+import { CircleDetailsModal } from "../features/map/components/CircleDetailsModal";
+import { SquareDetailsModal } from "../features/map/components/SquareDetailsModal";
+import { GridDetailsModal } from "../features/map/components/GridDetailsModal";
 import { useDrawCircle } from "../features/map/hooks/useDrawCircle";
 import { useDrawSquare } from "../features/map/hooks/useDrawSquare";
-import { useFeatureDeletion } from "../features/map/hooks/useFeatureDeletion";
+import { useDrawGrid } from "../features/map/hooks/useDrawGrid";
 import {
 	MarkerCreationOverlay,
 	type MarkerCreationOverlayHandle,
 } from "../features/markers/components/MarkerCreationOverlay";
 import { MarkersOverlay } from "../features/markers/components/MarkersOverlay";
-import { useMarkers } from "../features/markers/state/MarkersProvider";
+import { MarkerDetailsModal } from "../features/markers/components/MarkerDetailsModal";
+import { ICONS } from "../features/markers/constants/icons";
 import OfflineManagerSheet from "../features/offline/OfflineManagerSheet";
 import type { BBox } from "../features/offline/tiles";
 import { useOfflineMaps } from "../features/offline/useOfflineMaps";
+import { GiftedChat, IMessage } from "react-native-gifted-chat";
+import { useMarkers } from "../features/markers/state/MarkersProvider";
 
 const BOTTOM_SHEET_BACKGROUND = "#26292B";
 
@@ -68,6 +76,8 @@ const mapConfigurations = {
 	},
 };
 
+const mapConfigFor = (id: string) => mapConfigurations[id as keyof typeof mapConfigurations];
+
 export default function App() {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
@@ -79,22 +89,200 @@ export default function App() {
 	const [offlineMode, setOfflineMode] = useState<boolean>(false);
 	const [showOfflineManager, setShowOfflineManager] = useState<boolean>(false);
 	const [downloadBBox, setDownloadBBox] = useState<BBox | null>(null);
+	const [isChatOpen, setIsChatOpen] = useState(false);
 	const mapRef = useRef<MapViewRef | null>(null);
 	const draw = useDrawCircle();
 	const drawSquare = useDrawSquare();
-	const { select } = useFeatureDeletion();
+	const drawGrid = useDrawGrid();
 	const offline = useOfflineMaps();
-	const { state, dispatch } = useMarkers();
+	const { state: markersState, dispatch: markersDispatch } = useMarkers();
 	const markerCreationRef = useRef<MarkerCreationOverlayHandle | null>(null);
+	const [createCircleId, setCreateCircleId] = useState<string | undefined>(undefined);
+	const [viewCircleId, setViewCircleId] = useState<string | undefined>(undefined);
+	const [createSquareId, setCreateSquareId] = useState<string | undefined>(undefined);
+	const [viewSquareId, setViewSquareId] = useState<string | undefined>(undefined);
+	const [createGridId, setCreateGridId] = useState<string | undefined>(undefined);
+	const [viewGridId, setViewGridId] = useState<string | undefined>(undefined);
+	const [createModalVisible, setCreateModalVisible] = useState(false);
+	const [createIconId, setCreateIconId] = useState<string>("marker-default-pin");
+	const [pendingCreateCoord, setPendingCreateCoord] = useState<[number, number] | undefined>(undefined);
+	const [viewMarkerId, setViewMarkerId] = useState<string | undefined>(undefined);
+	const [cameraCenter, setCameraCenter] = useState<[number, number]>(mapConfigFor("new-york").centerCoordinate);
+	const [cameraZoom, setCameraZoom] = useState(mapConfigFor("new-york").zoomLevel);
 
 	const sheetRef = useRef<BottomSheet>(null);
+
+	useEffect(() => {
+		(async () => {
+			try {
+				await Location.requestForegroundPermissionsAsync();
+			} catch { }
+		})();
+	}, []);
+
+	useEffect(() => {
+		const config = mapConfigFor(selectedMap);
+		setCameraCenter(config.centerCoordinate);
+		setCameraZoom(config.zoomLevel);
+	}, [selectedMap]);
 
 	const handleCameraPress = () => {
 		router.push("/camera" as never);
 	};
+
+	const handleCenterOnUser = useCallback(async () => {
+		try {
+			const { status } = await Location.requestForegroundPermissionsAsync();
+			if (status !== Location.PermissionStatus.GRANTED) {
+				Alert.alert(
+					"Location permission required",
+					"Enable location access in settings to center the map on your position."
+				);
+				return;
+			}
+
+			const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+			const { longitude, latitude } = location.coords;
+			setCameraCenter([longitude, latitude]);
+			setCameraZoom((current) => (current < 13 ? 13 : current));
+		} catch (error) {
+			console.error("Failed to center map on user location", error);
+			Alert.alert("Unable to locate", "We couldn't determine your current position.");
+		}
+	}, []);
 	const snapPoints = useMemo(() => ["32%", "55%", "90%"], []);
 	const [bottomSheetIndex, setBottomSheetIndex] = useState(2);
 	const isBottomSheetExpanded = bottomSheetIndex > -1;
+	const ackTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>[]>>({});
+	const chatThreadsRef = useRef<ChatThread[]>([]);
+
+	const currentUser = useMemo<MinimalUser>(
+		() => ({
+			_id: "home-user",
+			name: "Jordan Rivera",
+		}),
+		[],
+	);
+
+	const familyMembers = useMemo(() => {
+		return {
+			spouse: {
+				_id: "chat-family-maya",
+				name: "Maya Rivera",
+			} satisfies MinimalUser,
+			child: {
+				_id: "chat-family-sofia",
+				name: "Sofia Rivera",
+			} satisfies MinimalUser,
+		};
+	}, []);
+
+	const peerDirectory = useMemo(() => {
+		return {
+			familyGroup: {
+				_id: "chat-family",
+				name: "Rivera Family",
+			} satisfies MinimalUser,
+			neighbor: {
+				_id: "chat-neighbor",
+				name: "Chris (Neighbor)",
+			} satisfies MinimalUser,
+			emsDispatch: {
+				_id: "chat-ems",
+				name: "City EMS Dispatch",
+			} satisfies MinimalUser,
+		};
+	}, []);
+
+	const initialThreads = useMemo<ChatThread[]>(() => {
+		const now = Date.now();
+		return [
+			{
+				id: "family-thread",
+				title: "Rivera Family",
+				peer: peerDirectory.familyGroup,
+				messages: [
+					{
+						_id: "family-msg-2",
+						text: "We're unpacking at Grandma's. River Road is already under water, I'll keep the updates coming.",
+						createdAt: new Date(now - 1000 * 60 * 2),
+						user: familyMembers.spouse,
+					},
+					{
+						_id: "family-msg-1",
+						text: "Grandma says hi! I grabbed the radio from the garage so we have it with us.",
+						createdAt: new Date(now - 1000 * 60 * 4),
+						user: familyMembers.child,
+					},
+					{
+						_id: "family-msg-0",
+						text: "Go-bags are ready. Leaving the house in 15 once the rain stops.",
+						createdAt: new Date(now - 1000 * 60 * 9),
+						user: currentUser,
+					},
+				],
+			},
+			{
+				id: "neighbor-thread",
+				title: "Chris (Neighbor)",
+				peer: peerDirectory.neighbor,
+				messages: [
+					{
+						_id: "neighbor-msg-1",
+						text: "Water's at the curb. I can help stack sandbags if you need it.",
+						createdAt: new Date(now - 1000 * 60 * 6),
+						user: peerDirectory.neighbor,
+					},
+					{
+						_id: "neighbor-msg-0",
+						text: "Thanks, Chris. Pump is running but the basement drain is backing up.",
+						createdAt: new Date(now - 1000 * 60 * 11),
+						user: currentUser,
+					},
+				],
+			},
+			{
+				id: "ems-thread",
+				title: "EMS Dispatch",
+				peer: peerDirectory.emsDispatch,
+				messages: [
+					{
+						_id: "ems-msg-2",
+						text: "Rescue boat en route, ETA 12 minutes. Stay on high ground and keep lights on.",
+						createdAt: new Date(now - 1000 * 60 * 2),
+						user: peerDirectory.emsDispatch,
+					},
+					{
+						_id: "ems-msg-1",
+						text: "We have two seniors with limited mobility and rising water in the living room.",
+						createdAt: new Date(now - 1000 * 60 * 5),
+						user: currentUser,
+					},
+					{
+						_id: "ems-msg-0",
+						text: "Copy. Confirming flash flood emergency at 482 River Bend?",
+						createdAt: new Date(now - 1000 * 60 * 7),
+						user: peerDirectory.emsDispatch,
+					},
+				],
+			},
+		];
+	}, [peerDirectory, currentUser, familyMembers]);
+
+	const [chatThreads, setChatThreads] = useState<ChatThread[]>(() => initialThreads);
+
+	useEffect(() => {
+		chatThreadsRef.current = chatThreads;
+	}, [chatThreads]);
+
+	useEffect(() => {
+		return () => {
+			Object.values(ackTimeouts.current).forEach((timeouts) => {
+				timeouts.forEach(clearTimeout);
+			});
+			ackTimeouts.current = {};
+		};
+	}, []);
 
 	const handleSelect = (action: any) => {
 		setVisible(false);
@@ -106,6 +294,9 @@ export default function App() {
 			},
 			startSquare: () => {
 				if (mapRef.current) drawSquare.start(mapRef.current);
+			},
+			startGrid: () => {
+				if (mapRef.current) drawGrid.start(mapRef.current);
 			},
 			startMarker: () => {
 				if (mapRef.current && anchor) {
@@ -125,10 +316,26 @@ export default function App() {
 		// since we're using it in the MapView props
 	};
 
-	const handlePluginPress = (pluginId: string) => {
-		// Placeholder for plugin functionality
-		console.log(`Plugin ${pluginId} pressed`);
-	};
+	const handleChatPress = useCallback(() => {
+		setIsChatOpen(true);
+	}, []);
+
+	const handleChatDismiss = useCallback(() => {
+		setIsChatOpen(false);
+	}, []);
+
+	const handlePluginPress = useCallback(
+		(pluginId: string) => {
+			if (pluginId === "chat") {
+				handleChatPress();
+				return;
+			}
+
+			// Placeholder for plugin functionality
+			console.log(`Plugin ${pluginId} pressed`);
+		},
+		[handleChatPress],
+	);
 
 	const handleViewMoreMaps = () => {
 		// Placeholder for view more maps functionality
@@ -140,10 +347,53 @@ export default function App() {
 		console.log("View more plugins pressed");
 	};
 
-	const onMapLongPress = (e: any) => {
-		// Reveal the bottom sheet when long pressing
-		sheetRef.current?.snapToIndex(1);
+	const handleChatSend = useCallback((threadId: string, outgoingMessages: IMessage[] = []) => {
+		if (outgoingMessages.length === 0) {
+			return;
+		}
 
+		const targetThread = chatThreadsRef.current.find((thread) => thread.id === threadId);
+		if (!targetThread) {
+			return;
+		}
+
+		setChatThreads((previousThreads) =>
+			previousThreads.map((thread) =>
+				thread.id === threadId
+					? { ...thread, messages: GiftedChat.append(thread.messages, outgoingMessages) }
+					: thread,
+			),
+		);
+
+		const [firstMessage] = outgoingMessages;
+		if (!firstMessage) {
+			return;
+		}
+
+		const acknowledgement: IMessage = {
+			_id: `ack-${threadId}-${firstMessage._id}-${Date.now()}`,
+			text: "Okay, got it.",
+			createdAt: new Date(Date.now() + 500),
+			user: targetThread.peer,
+		};
+
+		const timeout = setTimeout(() => {
+			setChatThreads((previousThreads) =>
+				previousThreads.map((thread) =>
+					thread.id === threadId
+						? { ...thread, messages: GiftedChat.append(thread.messages, [acknowledgement]) }
+						: thread,
+				),
+			);
+			ackTimeouts.current[threadId] = (ackTimeouts.current[threadId] ?? []).filter(
+				(item) => item !== timeout,
+			);
+		}, 650 + Math.random() * 600);
+
+		ackTimeouts.current[threadId] = [...(ackTimeouts.current[threadId] ?? []), timeout];
+	}, []);
+
+	const onMapLongPress = (e: any) => {
 		const coord = e?.geometry?.coordinates ?? e?.coordinates;
 		const pointArray =
 			e?.point ??
@@ -154,27 +404,6 @@ export default function App() {
 		}
 
 		if (Array.isArray(coord) && coord.length >= 2) {
-			const square = drawSquare.findSquareAtCoordinate([coord[0], coord[1]]);
-			if (square) {
-				select({
-					id: (square.properties as any).id,
-					type: "square",
-					delete: () => drawSquare.removeSquareById((square.properties as any).id),
-				});
-				setVisible(false);
-				return;
-			}
-			const circle = draw.findCircleAtCoordinate([coord[0], coord[1]]);
-			if (circle) {
-				select({
-					id: circle.properties.id,
-					type: "circle",
-					delete: () => draw.removeCircleById(circle.properties.id),
-				});
-
-				setVisible(false);
-				return;
-			}
 			setCoordinate([coord[0], coord[1]]);
 		} else {
 			setCoordinate(undefined);
@@ -242,20 +471,16 @@ export default function App() {
 				ref={mapRef as any}
 				style={styles.map}
 				onLongPress={onMapLongPress}
-				{...({ styleURL: "https://demotiles.maplibre.org/style.json" } as any)}
-			>
+				{...({ styleURL: "https://demotiles.maplibre.org/style.json" } as any)}>
+				<UserLocation showsUserHeadingIndicator />
 				<Camera
-					zoomLevel={
-						mapConfigurations[selectedMap as keyof typeof mapConfigurations].zoomLevel
-					}
-					centerCoordinate={
-						mapConfigurations[selectedMap as keyof typeof mapConfigurations]
-							.centerCoordinate
-					}
+					zoomLevel={cameraZoom}
+					centerCoordinate={cameraCenter}
+					animationDuration={750}
+					animationMode="flyTo"
 				/>
 				<RasterSource
 					id="satelliteSource"
-					key={`sat-src-${selectedMap}-${useLocal ? "local" : "remote"}`}
 					tileUrlTemplates={[useLocal ? localTemplate : remoteTemplate]}
 					tileSize={256}>
 					<RasterLayer
@@ -280,7 +505,15 @@ export default function App() {
 				)}
 				{/* Persisted circles */}
 				{draw.sources.circles.features.length > 0 && (
-					<ShapeSource id="circlesSource" shape={draw.sources.circles}>
+					<ShapeSource
+						id="circlesSource"
+						shape={draw.sources.circles}
+						onPress={(e: any) => {
+							const id = e?.features?.[0]?.properties?.id as string | undefined;
+							if (!id) return;
+							setViewCircleId(id);
+						}}
+					>
 						<FillLayer
 							id="circlesFill"
 							style={{ fillOpacity: 0.2, fillColor: "#2563eb" }}
@@ -306,7 +539,15 @@ export default function App() {
 				)}
 				{/* Persisted squares */}
 				{drawSquare.sources.squares.features.length > 0 && (
-					<ShapeSource id="squaresSource" shape={drawSquare.sources.squares}>
+					<ShapeSource
+						id="squaresSource"
+						shape={drawSquare.sources.squares}
+						onPress={(e: any) => {
+							const id = e?.features?.[0]?.properties?.id as string | undefined;
+							if (!id) return;
+							setViewSquareId(id);
+						}}
+					>
 						<FillLayer
 							id="squaresFill"
 							style={{ fillOpacity: 0.2, fillColor: "#16a34a" }}
@@ -317,17 +558,105 @@ export default function App() {
 						/>
 					</ShapeSource>
 				)}
+				{/* Grid preview source (white thick lines, no fill) */}
+				{drawGrid.sources.preview && (
+					<ShapeSource id="gridPreviewSource" shape={drawGrid.sources.preview}>
+						<LineLayer
+							id="gridPreviewLine"
+							style={{
+								lineColor: "#FFFFFF",
+								lineWidth: 4,
+								lineOpacity: 1,
+								lineCap: "round",
+								lineJoin: "round",
+							}}
+						/>
+					</ShapeSource>
+				)}
+				{/* Persisted grids */}
+				{drawGrid.sources.grids && drawGrid.sources.grids.features.length > 0 && (
+					<ShapeSource
+						id="gridsSource"
+						shape={drawGrid.sources.grids}
+						onPress={(e: any) => {
+							const id = e?.features?.[0]?.properties?.id as string | undefined;
+							if (!id) return;
+							setViewGridId(id);
+						}}
+					>
+						<LineLayer
+							id="gridsLine"
+							style={{
+								lineColor: "#FFFFFF",
+								lineWidth: 4,
+								lineOpacity: 1,
+								lineCap: "round",
+								lineJoin: "round",
+							}}
+						/>
+					</ShapeSource>
+				)}
 				{/* Markers overlay */}
-				<MarkersOverlay />
+				<MarkersOverlay onMarkerPress={(id) => setViewMarkerId(id)} />
 				{/* Marker creation overlay with preview + modal (must be inside MapView) */}
-				<MarkerCreationOverlay ref={markerCreationRef} />
+				<MarkerCreationOverlay
+					ref={markerCreationRef}
+					onPreviewStart={(coord) => {
+						setPendingCreateCoord(coord);
+						setCreateIconId("marker-default-pin");
+						setCreateModalVisible(true);
+					}}
+				/>
+
+				{/* User location marker */}
+				<UserLocation />
 			</MapView>
+			{/* Marker Details Modal - Create */}
+			<MarkerDetailsModal
+				visible={createModalVisible}
+				mode="create"
+				initialIconId={createIconId}
+				icons={ICONS}
+				onCancel={() => {
+					setCreateModalVisible(false);
+					setPendingCreateCoord(undefined);
+					markerCreationRef.current?.cancel();
+				}}
+				onIconChange={(id) => {
+					setCreateIconId(id);
+					markerCreationRef.current?.setIconId(id);
+				}}
+				onSave={({ title, description, iconId }) => {
+					if (!pendingCreateCoord) return;
+					const [lon, lat] = pendingCreateCoord;
+					markersDispatch({ type: "addMarker", payload: { lon, lat, meta: { title, description, iconId } } });
+					setCreateModalVisible(false);
+					setPendingCreateCoord(undefined);
+					markerCreationRef.current?.cancel();
+				}}
+			/>
+
+			{/* Marker Details Modal - View */}
+			<MarkerDetailsModal
+				visible={!!viewMarkerId}
+				mode="view"
+				icons={ICONS as any}
+				onCancel={() => setViewMarkerId(undefined)}
+				onDelete={() => {
+					if (!viewMarkerId) return;
+					markersDispatch({ type: "removeMarker", payload: { id: viewMarkerId } });
+					setViewMarkerId(undefined);
+				}}
+				marker={viewMarkerId ? (() => { const m = markersState.markers[viewMarkerId]; return m ? { title: m.title, description: m.description, iconId: m.iconId, createdAt: m.createdAt } : undefined; })() : undefined}
+			/>
 
 			{/* Toolbar fixed at the top */}
 			<SafeAreaView style={styles.toolbarContainer}>
 				<Toolbar
 					onAccountPress={() => setAccountMenuVisible((prev) => !prev)}
+					onChatPress={handleChatPress}
 					onCameraPress={handleCameraPress}
+					onCenterPress={handleCenterOnUser}
 				/>
 			</SafeAreaView>
 
@@ -396,19 +725,19 @@ export default function App() {
 										selectedMap as keyof typeof mapConfigurations
 									].centerCoordinate
 										? [
-												mapConfigurations[
-													selectedMap as keyof typeof mapConfigurations
-												].centerCoordinate[0] - 0.05,
-												mapConfigurations[
-													selectedMap as keyof typeof mapConfigurations
-												].centerCoordinate[1] - 0.05,
-												mapConfigurations[
-													selectedMap as keyof typeof mapConfigurations
-												].centerCoordinate[0] + 0.05,
-												mapConfigurations[
-													selectedMap as keyof typeof mapConfigurations
-												].centerCoordinate[1] + 0.05,
-										  ]
+											mapConfigurations[
+												selectedMap as keyof typeof mapConfigurations
+											].centerCoordinate[0] - 0.05,
+											mapConfigurations[
+												selectedMap as keyof typeof mapConfigurations
+											].centerCoordinate[1] - 0.05,
+											mapConfigurations[
+												selectedMap as keyof typeof mapConfigurations
+											].centerCoordinate[0] + 0.05,
+											mapConfigurations[
+												selectedMap as keyof typeof mapConfigurations
+											].centerCoordinate[1] + 0.05,
+										]
 										: [-86.35, 32.3, -86.25, 32.4]) as BBox)
 								}
 								remoteTemplate={remoteTemplate}
@@ -437,8 +766,7 @@ export default function App() {
 				]}
 			/>
 
-			{/* Delete overlay */}
-			<DeleteOverlay />
+			{/* Delete overlay removed: deletion now handled via per-shape modals */}
 
 			{/* Radial menu */}
 			<RadialMenu
@@ -448,9 +776,148 @@ export default function App() {
 				onRequestClose={() => setVisible(false)}
 			/>
 
+			{/* Circle details - create mode */}
+			<CircleDetailsModal
+				visible={!!createCircleId} mode="create"
+				onCancel={() => {
+					if (createCircleId) draw.removeCircleById(createCircleId);
+					setCreateCircleId(undefined);
+				}}
+				onSave={(payload: { title?: string; description?: string }) => {
+					const { title, description } = payload;
+					if (createCircleId) {
+						draw.updateCircleById(createCircleId, { title, description });
+					}
+					setCreateCircleId(undefined);
+				}}
+			/>
+
+			{/* Circle details - view mode */}
+			{(() => {
+				const viewCircle = viewCircleId ? draw.getCircleById(viewCircleId) : undefined;
+				return (
+					<CircleDetailsModal
+						visible={!!viewCircle}
+						mode="view"
+						circle={
+							viewCircle
+								? {
+									title: (viewCircle.properties as any)?.title,
+									description: (viewCircle.properties as any)?.description,
+									createdAt: (viewCircle.properties as any)?.createdAt,
+								}
+								: undefined
+						}
+						onCancel={() => setViewCircleId(undefined)}
+						onDelete={() => {
+							if (viewCircleId) {
+								draw.removeCircleById(viewCircleId);
+							}
+							setViewCircleId(undefined);
+						}}
+					/>
+				);
+			})()}
+
+			{/* Square details - create mode */}
+			<SquareDetailsModal
+				visible={!!createSquareId}
+				mode="create"
+				onCancel={() => {
+					if (createSquareId) drawSquare.removeSquareById(createSquareId);
+					setCreateSquareId(undefined);
+				}}
+				onSave={(payload: { title?: string; description?: string }) => {
+					const { title, description } = payload;
+					if (createSquareId) {
+						drawSquare.updateSquareById(createSquareId, { title, description });
+					}
+					setCreateSquareId(undefined);
+				}}
+			/>
+
+			{/* Square details - view mode */}
+			{(() => {
+				const viewSquare = viewSquareId ? drawSquare.getSquareById(viewSquareId) : undefined;
+				return (
+					<SquareDetailsModal
+						visible={!!viewSquare}
+						mode="view"
+						square={
+							viewSquare
+								? {
+									title: (viewSquare.properties as any)?.title,
+									description: (viewSquare.properties as any)?.description,
+									createdAt: (viewSquare.properties as any)?.createdAt,
+								}
+								: undefined
+						}
+						onCancel={() => setViewSquareId(undefined)}
+						onDelete={() => {
+							if (viewSquareId) {
+								drawSquare.removeSquareById(viewSquareId);
+							}
+							setViewSquareId(undefined);
+						}}
+					/>
+				);
+			})()}
+
+			{/* Grid details - create mode */}
+			<GridDetailsModal
+				visible={!!createGridId}
+				mode="create"
+				onCancel={() => {
+					if (createGridId) drawGrid.removeGridById(createGridId);
+					setCreateGridId(undefined);
+				}}
+				onSave={(payload: { title?: string; description?: string }) => {
+					const { title, description } = payload;
+					if (createGridId) {
+						drawGrid.updateGridById(createGridId, { title, description });
+					}
+					setCreateGridId(undefined);
+				}}
+			/>
+
+			{/* Grid details - view mode */}
+			{(() => {
+				const viewGrid = viewGridId ? drawGrid.getGridById(viewGridId) : undefined;
+				return (
+					<GridDetailsModal
+						visible={!!viewGrid}
+						mode="view"
+						grid={
+							viewGrid
+								? {
+									title: (viewGrid.properties as any)?.title,
+									description: (viewGrid.properties as any)?.description,
+									createdAt: (viewGrid.properties as any)?.createdAt,
+								}
+								: undefined
+						}
+						onCancel={() => setViewGridId(undefined)}
+						onDelete={() => {
+							if (viewGridId) {
+								drawGrid.removeGridById(viewGridId);
+							}
+							setViewGridId(undefined);
+						}}
+					/>
+				);
+			})()}
+
 			<AccountMenu
 				visible={accountMenuVisible}
 				onClose={() => setAccountMenuVisible(false)}
+			/>
+
+			<ChatInboxModal
+				visible={isChatOpen}
+				onDismiss={handleChatDismiss}
+				currentUser={currentUser}
+				threads={chatThreads}
+				onSend={handleChatSend}
 			/>
 
 			{/* Gesture overlay for draw circle mode */}
@@ -468,9 +935,10 @@ export default function App() {
 						const { locationX, locationY } = e.nativeEvent;
 						draw.onDrag([locationX, locationY]);
 					}}
-					onResponderRelease={(e: GestureResponderEvent) => {
+					onResponderRelease={async (e: GestureResponderEvent) => {
 						const { locationX, locationY } = e.nativeEvent;
-						draw.onRelease([locationX, locationY]);
+						const id = await draw.onRelease([locationX, locationY]);
+						if (id) setCreateCircleId(id);
 					}}
 				/>
 			)}
@@ -488,9 +956,31 @@ export default function App() {
 						const { locationX, locationY } = e.nativeEvent;
 						drawSquare.onDrag([locationX, locationY]);
 					}}
-					onResponderRelease={(e: GestureResponderEvent) => {
+					onResponderRelease={async (e: GestureResponderEvent) => {
 						const { locationX, locationY } = e.nativeEvent;
-						drawSquare.onRelease([locationX, locationY]);
+						const id = await drawSquare.onRelease([locationX, locationY]);
+						if (id) setCreateSquareId(id);
+					}}
+				/>
+			)}
+			{drawGrid.mode === "DRAW_GRID" && (
+				<View
+					style={StyleSheet.absoluteFill}
+					pointerEvents="box-only"
+					onStartShouldSetResponder={() => true}
+					onMoveShouldSetResponder={() => true}
+					onResponderGrant={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						drawGrid.onTap([locationX, locationY]);
+					}}
+					onResponderMove={(e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						drawGrid.onDrag([locationX, locationY]);
+					}}
+					onResponderRelease={async (e: GestureResponderEvent) => {
+						const { locationX, locationY } = e.nativeEvent;
+						const id = await drawGrid.onRelease([locationX, locationY]);
+						if (id) setCreateGridId(id);
 					}}
 				/>
 			)}

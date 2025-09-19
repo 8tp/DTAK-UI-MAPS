@@ -54,3 +54,6 @@ Expo_Package/**/.expo-shared/
 .DS_Store
 
 Expo_Package/expo-dtak-register/package-lock.json
+dTAK/package-lock.json
+dTAK/ios/Podfile.lock
+dTAK/ios/dTAK.xcodeproj/project.pbxproj

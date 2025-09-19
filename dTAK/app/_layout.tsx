@@ -3,13 +3,12 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import "react-native-get-random-values";
 import { ConnectivityProvider } from "../features/connectivity";
-import { FeatureDeletionProvider } from "../features/map/hooks/useFeatureDeletion";
 import { CameraSessionProvider } from "../src/features/camera/CameraSessionContext";
 import { MarkersProvider } from "../features/markers/state/MarkersProvider";
 
 export default function RootLayout() {
 	return (
-        <FeatureDeletionProvider>
+        
             <MarkersProvider>
                 <CameraSessionProvider>
                     <ConnectivityProvider>
@@ -27,6 +26,6 @@ export default function RootLayout() {
                     </ConnectivityProvider>
                 </CameraSessionProvider>
             </MarkersProvider>
-        </FeatureDeletionProvider>
+  
 	);
 }
