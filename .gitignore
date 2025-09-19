@@ -43,3 +43,6 @@ app-example
 /android
 
 .vscode/
+dTAK/package-lock.json
+dTAK/ios/Podfile.lock
+dTAK/ios/dTAK.xcodeproj/project.pbxproj
