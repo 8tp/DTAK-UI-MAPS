@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		39BDE8472E7CB12A005EAE1D /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = 8ED3890D8D510F88BC39F5AE /* MapLibre */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		5364D69F634464B7856F04B7 /* libPods-dTAK.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FE4CCE2CD754300801ED52E9 /* libPods-dTAK.a */; };
 		622F63D04B93005903341DBA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 78EC2B1B7EBE80FA671BA1BB /* PrivacyInfo.xcprivacy */; };
@@ -22,7 +23,7 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = dTAK/Info.plist; sourceTree = "<group>"; };
 		307CA8F5DCA30AC02A645ABC /* Pods-dTAK.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-dTAK.release.xcconfig"; path = "Target Support Files/Pods-dTAK/Pods-dTAK.release.xcconfig"; sourceTree = "<group>"; };
 		37182C728D18AD7E213B78DE /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-dTAK/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		78EC2B1B7EBE80FA671BA1BB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = dTAK/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		78EC2B1B7EBE80FA671BA1BB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = dTAK/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A94D4D804F6D5368ED9B8C56 /* Pods-dTAK.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-dTAK.debug.xcconfig"; path = "Target Support Files/Pods-dTAK/Pods-dTAK.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = dTAK/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
@@ -37,6 +38,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				39BDE8472E7CB12A005EAE1D /* MapLibre in Frameworks */,
 				5364D69F634464B7856F04B7 /* libPods-dTAK.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -119,7 +121,6 @@
 				A94D4D804F6D5368ED9B8C56 /* Pods-dTAK.debug.xcconfig */,
 				307CA8F5DCA30AC02A645ABC /* Pods-dTAK.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -148,6 +149,10 @@
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
 				5974FD4B10514912B8033F22 /* Remove signature files (Xcode workaround) */,
 				2F97B5DB0FF6DCA853C34171 /* [CP] Embed Pods Frameworks */,
+				A5E5EC8EE58C4200817EEB73 /* Remove signature files (Xcode workaround) */,
+				4486358FC47D45F29C85D22A /* Remove signature files (Xcode workaround) */,
+				F95F30B37790401087477F3A /* Remove signature files (Xcode workaround) */,
+				5E01BC13807443B9A4E767BF /* Remove signature files (Xcode workaround) */,
 			);
 			buildRules = (
 			);
@@ -271,7 +276,35 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-dTAK/Pods-dTAK-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		4486358FC47D45F29C85D22A /* Remove signature files (Xcode workaround) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Remove signature files (Xcode workaround)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
+		};
 		5974FD4B10514912B8033F22 /* Remove signature files (Xcode workaround) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Remove signature files (Xcode workaround)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
+		};
+		5E01BC13807443B9A4E767BF /* Remove signature files (Xcode workaround) */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -325,6 +358,8 @@
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-cxxreact/React-cxxreact_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/SDWebImage/SDWebImage.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/expo-dev-launcher/EXDevLauncher.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/expo-dev-menu/EXDevMenu.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
@@ -337,11 +372,41 @@
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-cxxreact_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/SDWebImage.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXDevLauncher.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXDevMenu.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-dTAK/Pods-dTAK-resources.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		A5E5EC8EE58C4200817EEB73 /* Remove signature files (Xcode workaround) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Remove signature files (Xcode workaround)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
+		};
+		F95F30B37790401087477F3A /* Remove signature files (Xcode workaround) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Remove signature files (Xcode workaround)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -366,6 +431,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = dTAK/dTAK.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZCCF539CTJ;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -402,6 +468,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = dTAK/dTAK.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZCCF539CTJ;
 				INFOPLIST_FILE = dTAK/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -5,6 +5,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/onboarding/dtak-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050608",
+      "dark": {
+        "image": "./assets/onboarding/dtak-logo.png",
+        "backgroundColor": "#050608"
+      }
+    },
     "scheme": "dtak",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -20,7 +29,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.dTAK"
     },
     "web": {
       "output": "static",
@@ -28,23 +38,17 @@
     },
     "plugins": [
       "@maplibre/maplibre-react-native",
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ]
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0b3164dc-a949-4a3e-abfe-757edcf60c69"
+      }
     }
   }
 }

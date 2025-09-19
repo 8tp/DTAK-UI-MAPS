@@ -8,9 +8,11 @@ type ToolbarProps = {
 	style?: ViewStyle;
 	onAccountPress?: (event: GestureResponderEvent) => void;
 	onCameraPress?: (event: GestureResponderEvent) => void;
+	onChatPress?: (event: GestureResponderEvent) => void;
+	onCenterPress?: (event: GestureResponderEvent) => void;
 };
 
-export default function Toolbar({ style, onAccountPress, onCameraPress }: ToolbarProps) {
+export default function Toolbar({ style, onAccountPress, onCameraPress, onChatPress, onCenterPress }: ToolbarProps) {
 	const [showUtilityPills, setShowUtilityPills] = useState(true);
 
 	return (
@@ -21,28 +23,38 @@ export default function Toolbar({ style, onAccountPress, onCameraPress }: Toolba
 			{/* Transparent Account Button */}
 			<View style={styles.iconsContainer}>
 				<TransparentButton
-				onPress={onAccountPress}
-				asset={require("@assets/images/user-icon.png")}
-				accessibilityLabel="Open account menu"
-				testID="toolbar-account-button"
-			/>
-		</View>
-		<ToolbarPill
-			icon={require("@assets/images/eye-icon.png")}
-			onPress={() => setShowUtilityPills((prev) => !prev)}
-			accessibilityLabel={showUtilityPills ? "Hide toolbar shortcuts" : "Show toolbar shortcuts"}
-		/>
-		{showUtilityPills ? (
-			<>
-				<ToolbarPill
-					iconComponent={<Feather name="camera" size={20} color="#FFFFFF" />}
-					onPress={onCameraPress}
-					accessibilityLabel="Open camera"
-					ariaHint="Launches the camera capture workflow"
+					onPress={onAccountPress}
+					asset={require("@assets/images/user-icon.png")}
+					accessibilityLabel="Open account menu"
+					testID="toolbar-account-button"
 				/>
-				<ToolbarPill icon={require("@assets/images/group-chat.png")} text="Chat" />
-			</>
-		) : null}
+			</View>
+			<ToolbarPill
+				icon={require("@assets/images/eye-icon.png")}
+				onPress={() => setShowUtilityPills((prev) => !prev)}
+				accessibilityLabel={showUtilityPills ? "Hide toolbar shortcuts" : "Show toolbar shortcuts"}
+			/>
+			{showUtilityPills ? (
+				<>
+					{onCenterPress && (
+						<ToolbarPill
+							iconComponent={<Feather name="crosshair" size={20} color="#FFFFFF" />}
+							onPress={onCenterPress}
+							accessibilityLabel="Center map"
+							accessibilityHint="Centers the map on your current location"
+						/>
+					)}
+					{onCameraPress && (
+						<ToolbarPill
+							iconComponent={<Feather name="camera" size={20} color="#FFFFFF" />}
+							onPress={onCameraPress}
+							accessibilityLabel="Open camera"
+							accessibilityHint="Launches the camera capture workflow"
+						/>
+					)}
+					<ToolbarPill icon={require("@assets/images/group-chat.png")} text="Chat" onPress={onChatPress} />
+				</>
+			) : null}
 		</ScrollView>
 	);
 }
