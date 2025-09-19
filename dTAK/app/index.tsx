@@ -178,6 +178,9 @@ export default function App() {
 
 			const svc = DittoService.getInstance();
 			// Build a conservative config object; enable transports by default
+			// Create a per-run workingDir to avoid file lock collisions when
+			// launching multiple simulators from the same source tree.
+			const runSuffix = String(Math.random()).slice(2, 8);
 			const cfg = {
 				appId: String(appId),
 				playgroundToken: process.env.EXPO_PUBLIC_DITTO_PLAYGROUND_TOKEN || (expoEnv.EXPO_PUBLIC_DITTO_PLAYGROUND_TOKEN as string),
@@ -185,6 +188,7 @@ export default function App() {
 				enableBluetooth: true,
 				enableWiFi: true,
 				enableAWDL: true,
+				workingDir: `ditto-run-${runSuffix}`,
 			} as const;
 
 			(async () => {

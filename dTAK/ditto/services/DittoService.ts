@@ -19,17 +19,21 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
   private _attachPeerObserver(cb: (peers: any[]) => void) {
     if (!this.ditto) throw new Error('Ditto not initialized');
     const d: any = this.ditto;
+    try { console.log('[DittoService] _attachPeerObserver: checking Ditto peer observation APIs'); } catch {}
     // Prefer direct observePeers when available (legacy), else use presence.observe
     if (typeof d.observePeers === 'function') {
+      try { console.log('[DittoService] _attachPeerObserver: using observePeers()'); } catch {}
       d.observePeers(cb);
       return;
     }
     if (d.presence && typeof d.presence.observe === 'function') {
+      try { console.log('[DittoService] _attachPeerObserver: using presence.observe()'); } catch {}
       d.presence.observe(cb);
       return;
     }
     // As last resort, try presenceManager if exposed
     if (typeof d.observeTransportConditions === 'function') {
+      try { console.log('[DittoService] _attachPeerObserver: using observeTransportConditions() as fallback'); } catch {}
       // Not strictly peer observation, but keep API tolerant.
       d.observeTransportConditions(cb);
       return;
@@ -99,6 +103,16 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
               }
             }
           };
+
+      // Log a safe identity summary (avoid printing secrets like tokens)
+      try {
+        const idSummary: any = {
+          type: (identity as any).type,
+          appID: (identity as any).appID,
+          enableDittoCloudSync: !!(identity as any).enableDittoCloudSync,
+        };
+        console.log('[DittoService] identity summary:', idSummary);
+      } catch {}
 
       // Initialize Ditto instance
       // Note: creating multiple Ditto instances with the same working directory
@@ -272,7 +286,14 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
 
       // Start sync engine
       if (this.ditto) {
-        await this.ditto.startSync();
+        try {
+          await this.ditto.startSync();
+          console.log('[DittoService] startSync() succeeded');
+        } catch (startErr) {
+          console.error('[DittoService] startSync() failed:', startErr);
+          // Emit error but allow caller to handle; rethrow so init fails visibly
+          throw startErr;
+        }
       } else {
         throw new Error('Ditto instance not available after construction');
       }
@@ -354,7 +375,12 @@ export class DittoService implements DittoEventEmitter<DittoServiceEvents> {
 
       try {
         this.ditto.setTransportConfig(tc as TransportConfig);
-        console.log('Ditto transport configuration set (TransportConfig):', tc);
+        try { console.log('Ditto transport configuration set (TransportConfig):', tc); } catch {}
+        // Log websocketURLs if present in a safe way
+        try {
+          const ws = (tc && tc.connect && tc.connect.websocketURLs) || (tc && tc.connect && tc.connect.websocketURLs) || [];
+          try { console.log('[DittoService] transport websocketURLs length =', Array.isArray(ws) ? ws.length : 'unknown'); } catch {}
+        } catch {}
       } catch (innerErr) {
         // In RN, setTransportConfig may be strict about instance types. Do not crash app.
         console.warn('setTransportConfig failed; continuing with defaults. Error:', innerErr);
