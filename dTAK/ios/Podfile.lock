@@ -7,13 +7,7 @@ PODS:
   - EXJSONUtils (0.15.0)
   - EXManifests (1.0.8):
     - ExpoModulesCore
-  - EXImageLoader (6.0.0):
-    - ExpoModulesCore
-    - React-Core
-  - EXJSONUtils (0.15.0)
-  - EXManifests (1.0.8):
-    - ExpoModulesCore
-  - Expo (54.0.8):
+  - Expo (54.0.9):
     - ExpoModulesCore
     - hermes-engine
     - RCTRequired
@@ -2403,9 +2397,6 @@ DEPENDENCIES:
   - EXImageLoader (from `../node_modules/expo-image-loader/ios`)
   - EXJSONUtils (from `../node_modules/expo-json-utils/ios`)
   - EXManifests (from `../node_modules/expo-manifests/ios`)
-  - EXImageLoader (from `../node_modules/expo-image-loader/ios`)
-  - EXJSONUtils (from `../node_modules/expo-json-utils/ios`)
-  - EXManifests (from `../node_modules/expo-manifests/ios`)
   - Expo (from `../node_modules/expo`)
   - expo-dev-client (from `../node_modules/expo-dev-client/ios`)
   - expo-dev-launcher (from `../node_modules/expo-dev-launcher`)
@@ -2525,12 +2516,6 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   EXConstants:
     :path: "../node_modules/expo-constants/ios"
-  EXImageLoader:
-    :path: "../node_modules/expo-image-loader/ios"
-  EXJSONUtils:
-    :path: "../node_modules/expo-json-utils/ios"
-  EXManifests:
-    :path: "../node_modules/expo-manifests/ios"
   EXImageLoader:
     :path: "../node_modules/expo-image-loader/ios"
   EXJSONUtils:
@@ -2748,25 +2733,32 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   EXConstants: 59d46d25b89f88cc38291a56dbce4d550758f72d
   EXImageLoader: e501c001bc40b8326605e82e6e80363c80fe06b5
-  Expo: 40b8889f991ca5f25ead0bfcbc1f818b01efab9e
+  EXJSONUtils: 1d3e4590438c3ee593684186007028a14b3686cd
+  EXManifests: 7469efed75d694ce3c43a6da9c6f3886f66d3c26
+  Expo: dc1fc2172065c07a1577cb42db4a963ae35c3225
+  expo-dev-client: b0363ce1f16a248d7c9b67ceaee2dbee058c1e05
+  expo-dev-launcher: 903b23df8c217bfad6d3692fec0368074eb22dc0
+  expo-dev-menu: e5b5cfce6ef9f4559d7c2f7cb928afb4810dfabf
+  expo-dev-menu-interface: 600df12ea01efecdd822daaf13cc0ac091775533
   ExpoAsset: 0687fe05f5d051c4a34dd1f9440bd00858413cfe
   ExpoCamera: 6d0c5bc68bc8de669f1ecd4242284de0827c4431
   ExpoFileSystem: adffad7d1f57f768ca7a5e3bf450312fb9ebd27a
   ExpoFont: d3e56c7cc03d9fd113b90a5513ad32b4bf46b0ff
   ExpoHaptics: b48d913e7e5f23816c6f130e525c9a6501b160b5
-  ExpoHead: bd3ceefbd93f64ff8298e07711bb67605ffb646c
+  ExpoHead: 6738545755eccce6b4937ad2ced7e2ccd7994bd8
   ExpoImage: 306dd755c842dba9f3ee654c51834a9cc657e6ca
   ExpoImageManipulator: dbf5b8fc805b55463811cb3da96ab60c532faae8
   ExpoKeepAwake: 3f5e3ac53627849174f3603271df8e08f174ed4a
   ExpoLinking: f5c171877e118e792cb9a77e5ade0b080d899b14
   ExpoLocation: 1dc9e4c06ef66ed081348a11eb637d1dfecc7d61
   ExpoMediaLibrary: 648cee3f5dcba13410ec9cc8ac9a426e89a61a31
-  ExpoModulesCore: af36f958c77e8551bc34cd62cf166eeb6a8d9920
-  ExpoNetwork: 0d2c2504d56096fe8be3930d5c70cb3390dac5bf
+  ExpoModulesCore: 1a826269555ed0fc8b79c7ebfa67cb0e333d001c
+  ExpoNetwork: 97073786edfe405aba5d0987a544617ed0671ad1
   ExpoSplashScreen: 9d2ff8fa08f2c00336a83f93bebffed3a8312519
   ExpoSymbols: ef7b8ac77ac2d496b1bc3f0f7daf5e19c3a9933a
   ExpoSystemUI: 5e7fbe4b716edb9e3a7bc0441e4a3b6b1f9eb1ea
   ExpoWebBrowser: 4f0dc52a559027cc0fba6920adc19a7604e2733d
+  EXUpdatesInterface: 1436757deb0d574b84bba063bd024c315e0ec08b
   FBLazyVector: 9e0cd874afd81d9a4d36679daca991b58b260d42
   hermes-engine: 35c763d57c9832d0eef764316ca1c4d043581394
   libavif: 84bbb62fb232c3018d6f1bab79beea87e35de7b7
@@ -2807,6 +2799,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 823a2c0e0d1826c784f808174626d5229f59be17
   React-microtasksnativemodule: 70cdf4826e52c7bcf98bc55255c3e30b5455d318
   react-native-get-random-values: 21325b2244dfa6b58878f51f9aa42821e7ba3d06
+  react-native-keyboard-controller: 1d0c88676bd6e8c610fa2884b372d9ef728bd779
   react-native-netinfo: f0a9899081c185db1de5bb2fdc1c88c202a059ac
   react-native-safe-area-context: add9b4ba236fe95ec600604d0fc72f395433dd59
   react-native-slider: b76fa3dd989d25e8c2751c2a546674dfc0c2b6f8
