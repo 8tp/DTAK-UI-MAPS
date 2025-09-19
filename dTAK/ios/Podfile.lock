@@ -7,9 +7,6 @@ PODS:
   - EXJSONUtils (0.15.0)
   - EXManifests (1.0.8):
     - ExpoModulesCore
-  - EXImageLoader (6.0.0):
-    - ExpoModulesCore
-    - React-Core
   - Expo (54.0.8):
     - ExpoModulesCore
     - hermes-engine

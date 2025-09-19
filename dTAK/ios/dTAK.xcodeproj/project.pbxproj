@@ -149,6 +149,9 @@
 				5974FD4B10514912B8033F22 /* Remove signature files (Xcode workaround) */,
 				2F97B5DB0FF6DCA853C34171 /* [CP] Embed Pods Frameworks */,
 				A5E5EC8EE58C4200817EEB73 /* Remove signature files (Xcode workaround) */,
+				4486358FC47D45F29C85D22A /* Remove signature files (Xcode workaround) */,
+				F95F30B37790401087477F3A /* Remove signature files (Xcode workaround) */,
+				5E01BC13807443B9A4E767BF /* Remove signature files (Xcode workaround) */,
 			);
 			buildRules = (
 			);
@@ -272,7 +275,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-dTAK/Pods-dTAK-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		3A56C82C8B6F49CAA2A99836 /* Remove signature files (Xcode workaround) */ = {
+		4486358FC47D45F29C85D22A /* Remove signature files (Xcode workaround) */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -376,6 +379,40 @@
 			shellPath = /bin/sh;
 			shellScript = "\n          echo \"Remove signature files (Xcode workaround)\";\n          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";\n        ";
 		};
+		F95F30B37790401087477F3A /* Remove signature files (Xcode workaround) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			name = "Remove signature files (Xcode workaround)";
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			shellPath = /bin/sh;
+			shellScript = "
+          echo \"Remove signature files (Xcode workaround)\";
+          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";
+        ";
+		};
+		5E01BC13807443B9A4E767BF /* Remove signature files (Xcode workaround) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			name = "Remove signature files (Xcode workaround)";
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			shellPath = /bin/sh;
+			shellScript = "
+          echo \"Remove signature files (Xcode workaround)\";
+          rm -rf \"$CONFIGURATION_BUILD_DIR/MapLibre.xcframework-ios.signature\";
+        ";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -418,7 +455,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.dTAK;
-				PRODUCT_NAME = dTAK;
+				PRODUCT_NAME = "dTAK";
 				SWIFT_OBJC_BRIDGING_HEADER = "dTAK/dTAK-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -449,7 +486,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.dTAK;
-				PRODUCT_NAME = dTAK;
+				PRODUCT_NAME = "dTAK";
 				SWIFT_OBJC_BRIDGING_HEADER = "dTAK/dTAK-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
